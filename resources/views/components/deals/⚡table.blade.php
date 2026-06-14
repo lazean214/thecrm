@@ -96,7 +96,7 @@ new class extends Component {
     // COMPUTED: Table Deals (paginated)
     // ─────────────────────────────────────────────────────
 
-    #[Computed]
+    #[Computed(persist: false)]
     public function dealsForTable(): array
     {
         $query = $this->buildTableQuery();
@@ -222,6 +222,14 @@ new class extends Component {
         Cache::put($this->kanbanCacheKey(), $data, now()->addMinutes(2));
     }
 
+    public function refreshKanbanData(): void
+    {
+        // Force refresh by bypassing cache
+        $data = $this->fetchKanbanData();
+        $this->kanbanData = $data['stages'] ?? [];
+        Cache::put($this->kanbanCacheKey(), $data, now()->addMinutes(2));
+    }
+
     #[On('echo:deals,DealCreated')]
     public function handleNewDealBroadcast(array $data): void
     {
@@ -252,9 +260,9 @@ new class extends Component {
     #[On('refreshTable')]
     public function refreshTableData(): void
     {
-        unset($this->dealsForTable); // Bust cache
         $this->currentPage = 1;
         $this->cursor = null;
+        unset($this->dealsForTable);
     }
 
     public function loadDeals(): void
@@ -262,9 +270,9 @@ new class extends Component {
         if ($this->view === 'kanban') {
             $this->loadKanbanData();
         } else {
-            unset($this->dealsForTable);
             $this->currentPage = 1;
             $this->cursor = null;
+            unset($this->dealsForTable);
         }
 
         $this->persistState();
@@ -278,9 +286,14 @@ new class extends Component {
     {
         $this->currentPage = 1;
         $this->cursor = null;
+        unset($this->dealsForTable);
         $this->resetBatchState();
         $this->persistState();
-        $this->loadDeals();
+
+        // Refresh kanban data when filters change
+        if ($this->view === 'kanban') {
+            $this->refreshKanbanData();
+        }
     }
 
     public function updatedFilterDealName(): void { $this->onFilterChanged(); }
@@ -300,8 +313,14 @@ new class extends Component {
     public function updatedPerPage(): void
     {
         $this->currentPage = 1;
+        $this->cursor = null;
+        unset($this->dealsForTable);
         $this->persistState();
-        $this->loadDeals();
+    }
+
+    public function updatedCursor(): void
+    {
+        unset($this->dealsForTable);
     }
 
     public function resetFilters(): void
@@ -314,8 +333,8 @@ new class extends Component {
         $this->isDefaultDateRange = true;
         $this->currentPage = 1;
         $this->cursor = null;
+        unset($this->dealsForTable);
         $this->persistState();
-        $this->loadDeals();
         $this->resetBatchState();
     }
 
@@ -332,8 +351,8 @@ new class extends Component {
         $this->view = $view;
         $this->currentPage = 1;
         $this->cursor = null;
+        unset($this->dealsForTable);
         $this->persistState();
-        $this->loadDeals();
 
         $this->dispatch('view-changed', view: $view);
     }
@@ -432,7 +451,7 @@ new class extends Component {
 
         $this->cursor = $this->nextCursor;
         $this->currentPage++;
-        $this->loadDeals();
+        unset($this->dealsForTable);
     }
 
     public function previousPage(): void
@@ -443,14 +462,14 @@ new class extends Component {
 
         $this->cursor = $this->previousCursor;
         $this->currentPage--;
-        $this->loadDeals();
+        unset($this->dealsForTable);
     }
 
     public function goToPage(int $page): void
     {
         $this->currentPage = max(1, min($page, $this->totalPages));
         $this->cursor = null;
-        $this->loadDeals();
+        unset($this->dealsForTable);
     }
 
     // ─────────────────────────────────────────────────────
@@ -711,6 +730,11 @@ new class extends Component {
         return $user ? $user->getAllowedDealStages() : [];
     }
 
+    public function getAllowedStagesForUser(): array
+    {
+        return $this->getEditableStages();
+    }
+
     public function canEditDealStage(): bool
     {
         return count($this->getEditableStages()) > 0;
@@ -743,14 +767,14 @@ new class extends Component {
         $this->isDefaultDateRange = false;
         $this->currentPage = 1;
         $this->cursor = null;
+        unset($this->dealsForTable);
         $this->persistState();
-        $this->loadDeals();
         $this->resetBatchState();
     }
 
     public function refreshDeals(): void
     {
-        $this->loadDeals();
+        unset($this->dealsForTable);
     }
 
     public function getDealsByStage(string $stage): array
