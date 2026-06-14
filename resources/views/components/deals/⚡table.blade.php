@@ -521,8 +521,8 @@ new class extends Component {
             $this->hasMorePages = $cursorPaginated->hasMorePages();
 
             // Store cursor values (not encoded) for next/previous navigation
-            $this->nextCursor = $cursorPaginated->nextCursor()?->getParameters();
-            $this->previousCursor = $cursorPaginated->previousCursor()?->getParameters();
+            $this->nextCursor = $cursorPaginated->nextCursor()?->encode();
+            $this->previousCursor = $cursorPaginated->previousCursor()?->encode();
 
             // Map to arrays after cursor pagination
             $this->deals = collect($this->deals)->map($mapper)->toArray();
@@ -540,7 +540,7 @@ new class extends Component {
 
             $this->deals = collect($kanbanPaginated->items())->map($mapper)->toArray();
             $this->kanbanHasMore = $kanbanPaginated->hasMorePages();
-            $this->kanbanCursor = $kanbanPaginated->nextCursor()?->getParameters();
+            $this->kanbanCursor = $kanbanPaginated->nextCursor()?->encode();
         }
 
         $this->cacheDeals();
