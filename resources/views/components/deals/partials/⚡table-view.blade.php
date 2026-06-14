@@ -97,6 +97,31 @@
 </div>
 
 <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    {{-- Skeleton loader --}}
+    @if ($tableLoading)
+        <div class="p-4 space-y-3">
+            @foreach (range(1, min($perPage, 10)) as $i)
+                <div class="flex items-center gap-4 animate-pulse">
+                    <div class="w-4 h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    @if ($hasCol('name'))
+                        <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
+                    @endif
+                    @if ($hasCol('owner'))
+                        <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                    @endif
+                    @if ($hasCol('company'))
+                        <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
+                    @endif
+                    @if ($hasCol('amount'))
+                        <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20 ml-auto"></div>
+                    @endif
+                    @if ($hasCol('stage'))
+                        <div class="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @else
     <table class="w-full text-sm">
         <thead>
             <tr
@@ -426,28 +451,33 @@
             @endforelse
         </tbody>
     </table>
+    @endif
 </div>
 
-{{-- Pagination (cursor-based with prefetch) --}}
-@if ($hasMorePages || $previousCursor)
-    <div class="flex items-center justify-between mt-4 px-1">
-        <div class="text-sm text-slate-500 dark:text-slate-400">
-            Showing {{ count($deals) }} deals per page
-        </div>
-
-        <div class="flex items-center gap-2">
-            <button wire:click="previousPage()" @disabled(!$previousCursor)
-                class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                ‹ Previous
-            </button>
-
-            <button
-                wire:click="nextPage()"
-                @mouseenter="$dispatch('prefetchNextPage')"
-                @disabled(!$hasMorePages)
-                class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                Next ›
-            </button>
-        </div>
+{{-- Pagination (cursor-based) --}}
+<div class="flex items-center justify-between mt-4 px-1">
+    <div class="text-sm text-slate-500 dark:text-slate-400">
+        @if ($totalDeals > 0)
+            Showing <span class="font-medium text-slate-700 dark:text-slate-200">{{ $paginationFrom }}–{{ $paginationTo }}</span>
+            of <span class="font-medium text-slate-700 dark:text-slate-200">{{ number_format($totalDeals) }}</span> deals
+            <span class="text-slate-400">({{ $perPage }} per page)</span>
+        @endif
     </div>
-@endif
+
+    <div class="flex items-center gap-2">
+        <button wire:click="previousPage()" @disabled(!$previousCursor)
+            class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            ‹ Previous
+        </button>
+
+        <span class="text-sm text-slate-500 dark:text-slate-400 px-2">
+            Page {{ $currentPage }}
+        </span>
+
+        <button wire:click="nextPage()"
+            @disabled(!$hasMorePages)
+            class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Next ›
+        </button>
+    </div>
+</div>

@@ -149,6 +149,18 @@
                         </div>
                     </div>
                 </template>
+
+                {{-- Load more button --}}
+                <template x-if="kanbanData[stage]?.has_more">
+                    <button @click="$wire.loadMoreInStage(stage)"
+                        class="w-full py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        <span x-text="'Load ' + Math.min(kanbanData[stage].count - (kanbanData[stage].offset || 20), 20) + ' more'"></span>
+                        <span class="text-slate-400" x-text="'(' + (kanbanData[stage].count - (kanbanData[stage].offset || 20)) + ' remaining)'"></span>
+                    </button>
+                </template>
             </div>
 
             {{-- Compliance footer --}}
@@ -180,19 +192,20 @@
         const CACHE_KEY = `kanban_v1_{{ auth()->id() }}`;
         const MAX_CACHE_AGE_MS = 15 * 60 * 1000; // 15 min
 
-        // Initialize kanbanData from server
+        // Initialize kanbanData from server - data is already keyed by stage with full metadata
+        // Format: { 'stage-name': { deals: [], count: 0, total_amount: 0, has_more: false } }
         let kanbanDataMap = {};
 
-        // Convert array format to stage-keyed map
         if (kanbanData && typeof kanbanData === 'object') {
-            // If it's already keyed by stage
+            // Check if it's already in the correct format (server-keyed)
             if (kanbanData['doc sent'] || kanbanData['doc signed']) {
+                // Already properly formatted - use directly
                 kanbanDataMap = kanbanData;
             } else {
-                // Convert from stages array format
+                // Legacy array format conversion (shouldn't happen with current server)
                 Object.keys(kanbanData).forEach(stage => {
-                    if (kanbanData[stage] && kanbanData[stage].deals) {
-                        kanbanDataMap[stage] = kanbanData[stage].deals;
+                    if (kanbanData[stage]) {
+                        kanbanDataMap[stage] = kanbanData[stage];
                     }
                 });
             }
@@ -259,16 +272,9 @@
             },
 
             syncWithServer(serverData) {
-                // Convert server format to our format
-                const newData = {};
-                Object.keys(serverData).forEach(stage => {
-                    if (serverData[stage] && serverData[stage].deals) {
-                        newData[stage] = serverData[stage].deals;
-                    }
-                });
-
-                if (Object.keys(newData).length > 0) {
-                    this.kanbanData = newData;
+                // Server data is already in correct format: { stage: { deals: [], count, total_amount, has_more } }
+                if (serverData && typeof serverData === 'object') {
+                    this.kanbanData = serverData;
                     this.saveState();
                 }
             },

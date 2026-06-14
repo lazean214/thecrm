@@ -25,6 +25,11 @@ new class extends Component {
     public array $kanbanData = [];
     public bool $kanbanLoading = false;
     public ?string $kanbanETag = null;
+    public int $kanbanPerStage = 50; // Limit deals shown per stage
+    public array $kanbanExpandedStages = []; // Track which stages are expanded
+
+    // ── Loading States ─────────────────────────────────
+    public bool $tableLoading = false;
 
     // ── Cursor Pagination ────────────────────────────────
     public ?string $cursor = null;
@@ -99,26 +104,21 @@ new class extends Component {
     #[Computed(persist: false)]
     public function dealsForTable(): array
     {
+        $this->tableLoading = false;
+
+        // Use paginate for total count
         $query = $this->buildTableQuery();
-
-        // Get total count
-        $countKey = $this->filterCacheKey('count');
-        $total = Cache::remember($countKey, now()->addSeconds(30), fn () => (clone $query)->count());
-
-        $this->totalDeals = $total;
-        $this->totalPages = max(1, (int) ceil($total / $this->perPage));
-        $this->currentPage = min($this->currentPage, max(1, $this->totalPages));
-        $this->paginationFrom = $total === 0 ? 0 : ($this->currentPage - 1) * $this->perPage + 1;
-        $this->paginationTo = min($this->currentPage * $this->perPage, $total);
-
-        // Cursor pagination
         $paginated = $query
             ->latest('updated_at')
-            ->cursorPaginate($this->perPage, ['*'], 'cursor', $this->cursor);
+            ->paginate($this->perPage);
+
+        $this->totalDeals = $paginated->total();
+        $this->totalPages = max(1, (int) ceil($this->totalDeals / $this->perPage));
+        $this->currentPage = $paginated->currentPage();
+        $this->paginationFrom = $paginated->firstItem() ?? 0;
+        $this->paginationTo = $paginated->lastItem() ?? 0;
 
         $this->hasMorePages = $paginated->hasMorePages();
-        $this->nextCursor = $paginated->nextCursor()?->encode();
-        $this->previousCursor = $paginated->previousCursor()?->encode();
 
         return collect($paginated->items())->map(fn ($d) => $this->serializeDealFull($d))->all();
     }
@@ -355,13 +355,39 @@ new class extends Component {
             return;
         }
 
+        // Cache current view data before switching
+        if ($this->view === 'table') {
+            $this->cacheTableData();
+        } elseif ($this->view === 'kanban') {
+            $this->cacheKanbanData();
+        }
+
         $this->view = $view;
-        $this->currentPage = 1;
-        $this->cursor = null;
-        unset($this->dealsForTable);
+        $this->tableLoading = $view === 'table';
         $this->persistState();
 
+        // Load data for the new view
+        $this->loadDeals();
+
         $this->dispatch('view-changed', view: $view);
+    }
+
+    private function cacheTableData(): void
+    {
+        $cacheKey = 'table_data_' . auth()->id() . '_' . md5(json_encode([
+            $this->filterDealName, $this->filterOwner, $this->filterContact,
+            $this->filterCompanyName, $this->filterStage, $this->minAmount,
+            $this->maxAmount, $this->dateFrom, $this->dateTo, $this->perPage, $this->currentPage
+        ]));
+        Cache::put($cacheKey, $this->dealsForTable, now()->addMinutes(5));
+    }
+
+    private function cacheKanbanData(): void
+    {
+        Cache::put($this->kanbanCacheKey(), [
+            'stages' => $this->kanbanData,
+            'cached_at' => now()->timestamp,
+        ], now()->addMinutes(5));
     }
 
     // ─────────────────────────────────────────────────────
@@ -452,30 +478,30 @@ new class extends Component {
 
     public function nextPage(): void
     {
-        if (! $this->nextCursor) {
+        if (! $this->hasMorePages) {
             return;
         }
 
-        $this->cursor = $this->nextCursor;
+        $this->tableLoading = true;
         $this->currentPage++;
         unset($this->dealsForTable);
     }
 
     public function previousPage(): void
     {
-        if (! $this->previousCursor) {
+        if ($this->currentPage <= 1) {
             return;
         }
 
-        $this->cursor = $this->previousCursor;
+        $this->tableLoading = true;
         $this->currentPage--;
         unset($this->dealsForTable);
     }
 
     public function goToPage(int $page): void
     {
+        $this->tableLoading = true;
         $this->currentPage = max(1, min($page, $this->totalPages));
-        $this->cursor = null;
         unset($this->dealsForTable);
     }
 
@@ -801,12 +827,13 @@ new class extends Component {
     private function buildKanbanQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return $this->buildBaseQuery()
-            ->select(['id', 'name', 'amount', 'stage', 'user_id', 'created_at'])
+            ->select(['id', 'name', 'amount', 'stage', 'user_id', 'created_at', 'updated_at'])
             ->with([
                 'contacts:id,first_name,last_name',
                 'companies:id,name',
                 'user:id,name',
-            ]);
+            ])
+            ->orderByDesc('updated_at'); // Most recently updated first
     }
 
     private function buildTableQuery(): \Illuminate\Database\Eloquent\Builder
@@ -979,17 +1006,20 @@ new class extends Component {
     private function fetchKanbanData(): array
     {
         $query = $this->buildKanbanQuery();
-
         $deals = $query->get();
 
-        // Group by stage
+        // Group by stage - limit initial load per stage
         $stages = [];
         foreach (DealStage::cases() as $stage) {
             $stageDeals = $deals->where('stage', $stage->value)->values();
+            $totalCount = $stageDeals->count();
+            $visibleDeals = $stageDeals->take($this->kanbanPerStage);
             $stages[$stage->value] = [
-                'deals' => $stageDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
-                'count' => $stageDeals->count(),
+                'deals' => $visibleDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
+                'count' => $totalCount,
                 'total_amount' => (float) $stageDeals->sum('amount'),
+                'has_more' => $totalCount > $this->kanbanPerStage,
+                'offset' => $this->kanbanPerStage,
             ];
         }
 
@@ -999,6 +1029,29 @@ new class extends Component {
             'total_amount' => (float) $deals->sum('amount'),
             'cached_at' => now()->timestamp,
         ];
+    }
+
+    public function loadMoreInStage(string $stage): void
+    {
+        $offset = $this->kanbanExpandedStages[$stage] ?? $this->kanbanPerStage;
+        $newLimit = $offset + $this->kanbanPerStage;
+
+        // Fetch fresh to get accurate slice
+        $query = $this->buildKanbanQuery()
+            ->where('stage', $stage);
+        $allStageDeals = $query->get();
+        $totalCount = $allStageDeals->count();
+        $visibleDeals = $allStageDeals->take($newLimit);
+
+        $this->kanbanData[$stage] = [
+            'deals' => $visibleDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
+            'count' => $totalCount,
+            'total_amount' => (float) $allStageDeals->sum('amount'),
+            'has_more' => $totalCount > $newLimit,
+            'offset' => $newLimit,
+        ];
+
+        $this->kanbanExpandedStages[$stage] = $newLimit;
     }
 
     private function filterCacheKey(string $prefix = ''): string
@@ -1043,8 +1096,9 @@ new class extends Component {
 ?>
 
 <div class="space-y-6 w-full mx-auto p-4 sm:p-6 lg:p-8 antialiased text-slate-900 dark:text-slate-100"
-    x-data="kanbanApp()"
-    @deals-updated.window="handleDealsUpdated()">
+    x-data="{
+        view: @entangle('view').defer,
+    }">
 
     {{-- Loading indicator --}}
     <div wire:loading.delay class="fixed top-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 z-50 animate-pulse"></div>
@@ -1209,75 +1263,3 @@ new class extends Component {
     @endif
 </div>
 
-<script>
-    /**
-     * Kanban Application - Enhanced with localStorage caching.
-     * Strategy:
-     *  1. Render server data immediately
-     *  2. Cache to localStorage for instant return visits
-     *  3. Merge incoming real-time updates
-     *  4. Optimistic UI updates on drag-drop
-     */
-    function kanbanApp() {
-        const CACHE_KEY = 'kanban_v1_{{ auth()->id() }}';
-        const MAX_CACHE_AGE = 15 * 60 * 1000; // 15 minutes
-
-        return {
-            init() {
-                // Load from localStorage on init for instant render
-                this.loadFromLocalStorage();
-
-                // Watch for Livewire updates
-                this.$watch('$wire.kanbanData', (data) => {
-                    if (data && Object.keys(data).length > 0) {
-                        this.saveToLocalStorage(data);
-                    }
-                });
-
-                // Listen for view changes
-                this.$wire.$on('view-changed', () => {
-                    this.clearLocalStorage();
-                });
-            },
-
-            loadFromLocalStorage() {
-                try {
-                    const cached = localStorage.getItem(CACHE_KEY);
-                    if (!cached) return;
-
-                    const { data, timestamp } = JSON.parse(cached);
-
-                    // Check if cache is fresh
-                    if (Date.now() - timestamp < MAX_CACHE_AGE && data) {
-                        // Data will be rendered by server, but this helps Alpine
-                        // sync state quickly on return visits
-                    }
-                } catch (e) {
-                    console.warn('Failed to load kanban cache:', e);
-                }
-            },
-
-            saveToLocalStorage(data) {
-                try {
-                    localStorage.setItem(CACHE_KEY, JSON.stringify({
-                        data,
-                        timestamp: Date.now(),
-                    }));
-                } catch (e) {
-                    // Storage full or unavailable - ignore
-                }
-            },
-
-            clearLocalStorage() {
-                try {
-                    localStorage.removeItem(CACHE_KEY);
-                } catch (e) {}
-            },
-
-            handleDealsUpdated() {
-                // Trigger a save of current state
-                this.saveToLocalStorage(this.$wire.kanbanData);
-            },
-        };
-    }
-</script>
