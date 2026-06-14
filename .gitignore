@@ -1,27 +1,58 @@
-/.phpunit.cache
-/node_modules
-/public/fonts-manifest.dev.json
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment files
 .env
 .env.backup
+.env.local
+.env.testing
 .env.production
-.phpactor.json
+
+# Generated / cached
+.phpunit.cache/
 .phpunit.result.cache
+/public/hot
+/public/storage
+/public/build
+/public/fonts-manifest.dev.json
+/storage/*.key
+/storage/pail/
+
+# Editor directories
+/.fleet/
+/.idea/
+/.nova/
+/.vscode/
+/.zed/
+
+# Auth
+/auth.json
+
+# Homestead
 Homestead.json
 Homestead.yaml
+
+# Logs
 npm-debug.log
 yarn-error.log
-/auth.json
-/.fleet
-/.idea
-/.nova
-/.vscode
-/.zed
-/.phpunit.cache
-/.agents
-/.gemini
+lerna-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Swap files
+*.swp
+*.swo
+*~
+
+# PHP actor
+.phpactor.json
+
+# Claude / AI tools
+/.agents/
+/.gemini/
+
+# Process docs
 PROCESS.md
