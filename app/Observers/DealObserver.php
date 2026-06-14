@@ -6,6 +6,8 @@ use App\Enums\DealStage;
 use App\Models\Deal;
 use App\Models\User;
 use App\Notifications\DealCreatedNotification;
+use App\Notifications\DealPaidNotification;
+use App\Notifications\DealReadyForPaymentNotification;
 use App\Notifications\DealStageMovedNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -54,33 +56,38 @@ class DealObserver
                 ? $newStage->value
                 : $newStage;
 
-            $users = User::whereHas('teams', function ($query) {
-                $query->where('name', 'Compliance');
+            // Get compliance team users (matching the actual team name)
+            $complianceUsers = User::whereHas('teams', function ($query) {
+                $query->where('name', 'Compliance Team');
             })->get();
 
+            // Build recipients: compliance team + deal owner
+            $recipients = $complianceUsers;
+
             if ($deal->user) {
-                $users->push($deal->user);
+                $recipients->push($deal->user);
             }
 
+            $recipients = $recipients->unique('id');
+
+            // Always send stage moved notification (database only)
             Notification::send(
-                $users->unique('id'),
-                new DealStageMovedNotification(
-                    $deal,
-                    $oldStage,
-                    $newStage
-                )
+                $recipients,
+                new DealStageMovedNotification($deal, $oldStage, $newStage),
             );
+
+            // Additional notifications for specific stages
+            if ($newStage === DealStage::READY_FOR_PAYMENT->value) {
+                if ($deal->user) {
+                    $deal->user->notify(new DealReadyForPaymentNotification($deal));
+                }
+            }
+
+            if ($newStage === DealStage::PAID->value) {
+                if ($deal->user) {
+                    $deal->user->notify(new DealPaidNotification($deal));
+                }
+            }
         }
-    }
-
-    private function recipients(Deal $deal)
-    {
-        $complianceUsers = User::whereHas('teams', function ($query) {
-            $query->where('name', 'Compliance');
-        })->get();
-
-        return $complianceUsers
-            ->push($deal->owner)
-            ->unique('id');
     }
 }

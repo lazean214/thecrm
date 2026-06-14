@@ -3,13 +3,16 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class DealStageStaleNotification extends Notification
 {
+    use Queueable;
+
     public function __construct(
-        public readonly Deal $deal
+        public readonly Deal $deal,
     ) {}
 
     public function via(object $notifiable): array

@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class DealReadyForPaymentNotification extends Notification
+class DealPaidNotification extends Notification
 {
     use Queueable;
 
@@ -25,20 +25,20 @@ class DealReadyForPaymentNotification extends Notification
         $amount = number_format((float) $this->deal->amount, 2);
 
         return (new MailMessage)
-            ->subject("Payment Ready: {$this->deal->name}")
+            ->subject("Payment Received: {$this->deal->name}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("Your deal **{$this->deal->name}** is now ready for payment.")
+            ->line("Payment has been received for deal **{$this->deal->name}**.")
             ->line("**Amount:** £{$amount}")
             ->action('View Deal', route('deals.show', $this->deal->id))
-            ->line('Please proceed with the payment at your earliest convenience.');
+            ->line('This deal is now complete.');
     }
 
     public function toDatabase(object $notifiable): array
     {
         return [
-            'type' => 'deal_ready_for_payment',
-            'title' => "Payment Ready: {$this->deal->name}",
-            'message' => "Deal {$this->deal->name} (£".number_format((float) $this->deal->amount, 2).') is now ready for payment.',
+            'type' => 'deal_paid',
+            'title' => "Payment Received: {$this->deal->name}",
+            'message' => 'Payment of £'.number_format((float) $this->deal->amount, 2)." received for {$this->deal->name}.",
             'deal_id' => $this->deal->id,
             'url' => route('deals.show', $this->deal->id),
         ];

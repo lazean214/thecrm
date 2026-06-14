@@ -12,4 +12,10 @@ Schedule::command('deals:check-stale-stages')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Check for deals not touched in 24 hours (any stage)
+Schedule::command('deals:check-inactive')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Schedule::command('gdpr:anonymize-expired')->daily();
