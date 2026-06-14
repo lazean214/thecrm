@@ -13,7 +13,7 @@ class SignableClient
     // -------------------------------------------------------------------------
 
     /**
-     * @param array<string, mixed> $data  Query params for GET, body for POST/PUT/PATCH.
+     * @param  array<string, mixed>  $data  Query params for GET, body for POST/PUT/PATCH.
      */
     private function request(string $method, string $path, array $data = []): Response
     {
@@ -32,12 +32,12 @@ class SignableClient
             ->timeout($timeout);
 
         return match (strtoupper($method)) {
-            'GET'    => $http->get($server.$path, $data),
-            'POST'   => $http->post($server.$path, $data),
-            'PUT'    => $http->put($server.$path, $data),
-            'PATCH'  => $http->patch($server.$path, $data),
+            'GET' => $http->get($server.$path, $data),
+            'POST' => $http->post($server.$path, $data),
+            'PUT' => $http->put($server.$path, $data),
+            'PATCH' => $http->patch($server.$path, $data),
             'DELETE' => $http->delete($server.$path),
-            default  => throw new RuntimeException("Unsupported HTTP method: {$method}"),
+            default => throw new RuntimeException("Unsupported HTTP method: {$method}"),
         };
     }
 
@@ -261,7 +261,7 @@ class SignableClient
      * Signable expects all send-envelope variants to provide envelope_documents.
      * Keep backward compatibility with the local API by accepting legacy keys.
      *
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function normalizeEnvelopePayload(array $payload): array
@@ -341,4 +341,3 @@ class SignableClient
         return $payload;
     }
 }
-

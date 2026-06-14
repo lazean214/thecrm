@@ -71,20 +71,18 @@ new class extends Component
         return Contact::with('deals', 'companies')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->whereRaw(
-                        "CONCAT(first_name, ' ', last_name) LIKE ?",
-                        ['%' . $this->search . '%']
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'phone',
-                        'like',
-                        '%' . $this->search . '%'
-                    );
+                    $q->where('first_name', 'like', '%'.$this->search.'%')
+                        ->orWhere('last_name', 'like', '%'.$this->search.'%')
+                        ->orWhere(
+                            'email',
+                            'like',
+                            '%'.$this->search.'%'
+                        )
+                        ->orWhere(
+                            'phone',
+                            'like',
+                            '%'.$this->search.'%'
+                        );
                 });
             })
             ->orderBy(

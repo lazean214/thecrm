@@ -4,24 +4,22 @@ declare(strict_types=1);
 
 namespace Modules\MyDigitalAccounts\Domain;
 
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\Response;
-use Illuminate\Http\Client\PendingRequest;
-use Modules\MyDigitalAccounts\Exceptions\{
-    MyDigitalAccountsApiException,
-    AuthenticationException,
-    AuthorizationException,
-    ConnectionException,
-    ConfigurationException,
-    RateLimitException,
-    ResourceNotFoundException,
-    ValidationException,
-};
+use Modules\MyDigitalAccounts\Exceptions\AuthenticationException;
+use Modules\MyDigitalAccounts\Exceptions\AuthorizationException;
+use Modules\MyDigitalAccounts\Exceptions\ConfigurationException;
+use Modules\MyDigitalAccounts\Exceptions\ConnectionException;
+use Modules\MyDigitalAccounts\Exceptions\MyDigitalAccountsApiException;
+use Modules\MyDigitalAccounts\Exceptions\RateLimitException;
+use Modules\MyDigitalAccounts\Exceptions\ResourceNotFoundException;
+use Modules\MyDigitalAccounts\Exceptions\ValidationException;
 
 /**
  * MyDigitalAccounts API Client
- * 
+ *
  * Central HTTP client wrapper handling:
  * - Authentication (OAuth2, API Key, Bearer Token)
  * - Token caching and refresh
@@ -32,11 +30,15 @@ use Modules\MyDigitalAccounts\Exceptions\{
 class MyDigitalAccountsClient
 {
     private const TOKEN_CACHE_KEY = 'mydigitalaccounts:oauth:token';
+
     private const RATE_LIMIT_CACHE_KEY = 'mydigitalaccounts:rate_limit';
 
     private string $baseUrl;
+
     private string $authType;
+
     private array $config;
+
     private ?string $cachedToken = null;
 
     public function __construct(array $config)
@@ -95,9 +97,9 @@ class MyDigitalAccountsClient
 
     /**
      * Make a GET request to the API
-     * 
-     * @param string $endpoint API endpoint path (e.g., '/companies')
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $endpoint  API endpoint path (e.g., '/companies')
+     * @param  array<string, mixed>  $params  Query parameters
      */
     public function get(string $endpoint, array $params = []): array
     {
@@ -106,10 +108,10 @@ class MyDigitalAccountsClient
 
     /**
      * Make a POST request to the API
-     * 
-     * @param string $endpoint API endpoint path
-     * @param array<string, mixed> $data Request body data
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $endpoint  API endpoint path
+     * @param  array<string, mixed>  $data  Request body data
+     * @param  array<string, mixed>  $params  Query parameters
      */
     public function post(string $endpoint, array $data = [], array $params = []): array
     {
@@ -118,10 +120,10 @@ class MyDigitalAccountsClient
 
     /**
      * Make a PUT request to the API
-     * 
-     * @param string $endpoint API endpoint path
-     * @param array<string, mixed> $data Request body data
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $endpoint  API endpoint path
+     * @param  array<string, mixed>  $data  Request body data
+     * @param  array<string, mixed>  $params  Query parameters
      */
     public function put(string $endpoint, array $data = [], array $params = []): array
     {
@@ -130,10 +132,10 @@ class MyDigitalAccountsClient
 
     /**
      * Make a PATCH request to the API
-     * 
-     * @param string $endpoint API endpoint path
-     * @param array<string, mixed> $data Request body data
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $endpoint  API endpoint path
+     * @param  array<string, mixed>  $data  Request body data
+     * @param  array<string, mixed>  $params  Query parameters
      */
     public function patch(string $endpoint, array $data = [], array $params = []): array
     {
@@ -142,9 +144,9 @@ class MyDigitalAccountsClient
 
     /**
      * Make a DELETE request to the API
-     * 
-     * @param string $endpoint API endpoint path
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $endpoint  API endpoint path
+     * @param  array<string, mixed>  $params  Query parameters
      */
     public function delete(string $endpoint, array $params = []): array
     {
@@ -153,11 +155,11 @@ class MyDigitalAccountsClient
 
     /**
      * Execute an HTTP request with retries, rate limiting, and error handling
-     * 
-     * @param string $method HTTP method
-     * @param string $endpoint API endpoint path
-     * @param array<string, mixed> $data Request body
-     * @param array<string, mixed> $params Query parameters
+     *
+     * @param  string  $method  HTTP method
+     * @param  string  $endpoint  API endpoint path
+     * @param  array<string, mixed>  $data  Request body
+     * @param  array<string, mixed>  $params  Query parameters
      */
     private function request(
         string $method,
@@ -201,7 +203,7 @@ class MyDigitalAccountsClient
         try {
             $pendingRequest = $this->getPendingRequest();
 
-            if (!empty($params)) {
+            if (! empty($params)) {
                 $pendingRequest = $pendingRequest->withQueryParameters($params);
             }
 
@@ -223,7 +225,7 @@ class MyDigitalAccountsClient
             throw $e;
         } catch (\Exception $e) {
             throw new ConnectionException(
-                'Connection to MyDigitalAccounts API failed: ' . $e->getMessage(),
+                'Connection to MyDigitalAccounts API failed: '.$e->getMessage(),
                 previous: $e,
             );
         }
@@ -277,6 +279,7 @@ class MyDigitalAccountsClient
     private function addOAuth2Headers(PendingRequest $pendingRequest): PendingRequest
     {
         $token = $this->getOrRefreshToken();
+
         return $pendingRequest->withToken($token);
     }
 
@@ -296,6 +299,7 @@ class MyDigitalAccountsClient
 
             if ($cached !== null) {
                 $this->cachedToken = $cached;
+
                 return $cached;
             }
         }
@@ -332,7 +336,7 @@ class MyDigitalAccountsClient
                     'scope' => $oauth2['scope'] ?? 'api:read api:write',
                 ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 throw new AuthenticationException(
                     'Failed to obtain OAuth2 access token',
                     $response->json(),
@@ -340,6 +344,7 @@ class MyDigitalAccountsClient
             }
 
             $data = $response->json();
+
             return $data['access_token'] ?? throw new AuthenticationException(
                 'No access token in OAuth2 response'
             );
@@ -347,7 +352,7 @@ class MyDigitalAccountsClient
             throw $e;
         } catch (\Exception $e) {
             throw new AuthenticationException(
-                'OAuth2 token refresh failed: ' . $e->getMessage(),
+                'OAuth2 token refresh failed: '.$e->getMessage(),
                 previous: $e,
             );
         }
@@ -373,6 +378,7 @@ class MyDigitalAccountsClient
     private function addBearerTokenHeaders(PendingRequest $pendingRequest): PendingRequest
     {
         $token = $this->config['auth']['bearer_token']['token'] ?? '';
+
         return $pendingRequest->withToken($token);
     }
 
@@ -382,7 +388,8 @@ class MyDigitalAccountsClient
     private function buildUrl(string $endpoint): string
     {
         $endpoint = ltrim($endpoint, '/');
-        return rtrim($this->baseUrl, '/') . '/' . $endpoint;
+
+        return rtrim($this->baseUrl, '/').'/'.$endpoint;
     }
 
     /**
@@ -433,7 +440,7 @@ class MyDigitalAccountsClient
      */
     private function checkRateLimit(): void
     {
-        if (!($this->config['rate_limit']['enabled'] ?? true)) {
+        if (! ($this->config['rate_limit']['enabled'] ?? true)) {
             return;
         }
 
@@ -458,7 +465,7 @@ class MyDigitalAccountsClient
      */
     private function recordRateLimit(Response $response): void
     {
-        if (!($this->config['rate_limit']['enabled'] ?? true)) {
+        if (! ($this->config['rate_limit']['enabled'] ?? true)) {
             return;
         }
 

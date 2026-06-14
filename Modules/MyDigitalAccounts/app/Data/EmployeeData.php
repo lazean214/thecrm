@@ -8,7 +8,7 @@ use DateTimeImmutable;
 
 /**
  * Employee Data Transfer Object
- * 
+ *
  * Represents an employee/contractor resource from the MyDigitalAccounts API
  */
 readonly class EmployeeData

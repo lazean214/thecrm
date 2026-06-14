@@ -1,9 +1,11 @@
 <?php
+
 // app/Traits/LogsDealHistory.php
 
 namespace App\Traits;
 
 use App\Models\DealHistory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 trait LogsDealHistory
@@ -45,14 +47,14 @@ trait LogsDealHistory
     {
         $user = auth()->user();
         $userName = $user?->name ?? 'System';
-        
+
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'stage_moved',
             'field' => 'stage',
             'old_value' => $oldStage,
             'new_value' => $newStage,
-            'details' => "Stage moved from \"{$oldStage}\" to \"{$newStage}\" by {$userName}" . ($reason ? " ({$reason})" : ''),
+            'details' => "Stage moved from \"{$oldStage}\" to \"{$newStage}\" by {$userName}".($reason ? " ({$reason})" : ''),
             'metadata' => [
                 'old_stage' => $oldStage,
                 'new_stage' => $newStage,
@@ -68,10 +70,10 @@ trait LogsDealHistory
     {
         $user = auth()->user();
         $actorName = $user?->name ?? 'System';
-        
-        $oldOwner = $oldOwnerName ?? optional(\App\Models\User::find($oldOwnerId))->name ?? 'None';
-        $newOwner = $newOwnerName ?? optional(\App\Models\User::find($newOwnerId))->name ?? 'None';
-        
+
+        $oldOwner = $oldOwnerName ?? optional(User::find($oldOwnerId))->name ?? 'None';
+        $newOwner = $newOwnerName ?? optional(User::find($newOwnerId))->name ?? 'None';
+
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'owner_changed',
@@ -95,9 +97,9 @@ trait LogsDealHistory
     {
         $user = auth()->user();
         $actorName = $user?->name ?? 'System';
-        
-        $entityName = $entity->name ?? ($entity->first_name . ' ' . $entity->last_name) ?? $entity->id;
-        
+
+        $entityName = $entity->name ?? ($entity->first_name.' '.$entity->last_name) ?? $entity->id;
+
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'association_updated',
@@ -122,21 +124,21 @@ trait LogsDealHistory
         if (in_array($field, $skipFields)) {
             return;
         }
-        
+
         // Format values for display
         $oldDisplay = $this->formatValueForDisplay($field, $oldValue);
         $newDisplay = $this->formatValueForDisplay($field, $newValue);
-        
+
         // Only log if values are different
         if ($oldDisplay === $newDisplay) {
             return;
         }
-        
+
         $user = auth()->user();
         $actorName = $user?->name ?? 'System';
-        
+
         $fieldLabel = $this->getFieldLabel($field);
-        
+
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'details_updated',
@@ -172,16 +174,16 @@ trait LogsDealHistory
         if ($updated === null) {
             $updated = $this;
         }
-        
+
         $ignoreFields = ['updated_at', 'created_at', 'stage_updated_at'];
-        
+
         foreach ($updated->getAttributes() as $field => $newValue) {
             if (in_array($field, $ignoreFields)) {
                 continue;
             }
-            
+
             $oldValue = $original->getAttribute($field);
-            
+
             if ($oldValue != $newValue) {
                 // Skip logging stage changes here as they're handled separately
                 if ($field !== 'stage') {
@@ -219,7 +221,7 @@ trait LogsDealHistory
             'photo_id_passport' => 'Photo ID/Passport',
             'mda_setup' => 'MDA setup',
         ];
-        
+
         return $labels[$field] ?? ucwords(str_replace('_', ' ', $field));
     }
 
@@ -231,15 +233,15 @@ trait LogsDealHistory
         if (is_null($value) || $value === '') {
             return 'Not set';
         }
-        
+
         if (in_array($field, ['amount', 'agency_deal_value', 'margin_agreed']) && is_numeric($value)) {
-            return '£' . number_format((float) $value, 2);
+            return '£'.number_format((float) $value, 2);
         }
-        
+
         if (in_array($field, ['date_sent', 'date_signed', 'date_set_up', 'date_logged', 'contract_recieved_date', 'starter_checklist_recieved_date'])) {
             return date('d M Y', strtotime($value));
         }
-        
+
         return (string) $value;
     }
 

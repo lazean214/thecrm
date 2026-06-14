@@ -20,7 +20,7 @@ class DealController extends Controller
     public function store(StoreDealRequest $request): DealResource
     {
         $data = $request->validated();
-        
+
         if (! isset($data['user_id'])) {
             $data['user_id'] = $request->user()?->id;
         }

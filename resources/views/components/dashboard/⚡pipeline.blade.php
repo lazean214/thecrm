@@ -77,27 +77,33 @@ new class extends Component
         $startDate = $this->filterDateFrom ? Carbon::parse($this->filterDateFrom) : Carbon::now()->subMonths(3);
         $endDate = $this->filterDateTo ? Carbon::parse($this->filterDateTo) : Carbon::now();
 
-        return Deal::query()
+        $deals = Deal::query()
             ->when($this->filterUserId, fn ($q) => $q->where('user_id', $this->filterUserId))
             ->when($this->filterCompanyId, fn ($q) => $q->whereHas('companies', fn ($q2) => $q2->where('companies.id', $this->filterCompanyId)))
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(
-                DB::raw('YEARWEEK(created_at) as week_key'),
-                DB::raw('MIN(DATE(created_at)) as week_start'),
-                DB::raw('COUNT(CASE WHEN stage = "paid" THEN 1 END) as paid_deals'),
-                DB::raw('SUM(CASE WHEN stage = "paid" THEN amount ELSE 0 END) as paid_amount'),
-                DB::raw('COUNT(CASE WHEN stage = "doc_sent" AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as created_this_week'),
-                DB::raw('COUNT(*) as total_deals')
-            )
-            ->groupBy('week_key')
-            ->orderBy('week_key', 'desc')
-            ->limit(12)
-            ->get()
-            ->map(function ($item) {
-                $item->week_range = Carbon::parse($item->week_start)->format('d M') . ' - ' . 
-                                    Carbon::parse($item->week_start)->addDays(6)->format('d M Y');
-                return $item;
-            });
+            ->get();
+
+        // Group by ISO year-week at the PHP level (database-agnostic)
+        $weeks = $deals->groupBy(function ($deal) {
+            return Carbon::parse($deal->created_at)->format('o-W');
+        });
+
+        return $weeks->take(12)
+            ->sortKeysDesc()
+            ->map(function ($weekDeals, $weekKey) {
+                $weekStart = $weekDeals->min(fn ($d) => $d->created_at);
+                return (object) [
+                    'week_key' => $weekKey,
+                    'week_start' => $weekStart,
+                    'paid_deals' => $weekDeals->where('stage', 'paid')->count(),
+                    'paid_amount' => $weekDeals->where('stage', 'paid')->sum('amount'),
+                    'created_this_week' => $weekDeals->where('stage', 'doc_sent')
+                        ->where('created_at', '>=', Carbon::now()->subDays(7))->count(),
+                    'total_deals' => $weekDeals->count(),
+                    'week_range' => Carbon::parse($weekStart)->format('d M') . ' - ' .
+                        Carbon::parse($weekStart)->addDays(6)->format('d M Y'),
+                ];
+            })->values()->all();
     }
 
     #[Computed]

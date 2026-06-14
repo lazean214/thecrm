@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Models\Contact;
-use App\Models\User;
-use App\Models\Deal;
 use App\Models\DealEmailLog;
 use App\Models\GdprSetting;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +15,7 @@ class GdprRetentionService
     public function anonymizeExpiredContacts(): int
     {
         $setting = GdprSetting::getRetentionFor('contacts');
-        if (!$setting || !$setting->is_enabled) {
+        if (! $setting || ! $setting->is_enabled) {
             return 0;
         }
 
@@ -36,9 +35,9 @@ class GdprRetentionService
         foreach ($contacts as $contact) {
             DB::transaction(function () use ($contact) {
                 $contact->update([
-                    'first_name' => 'ANON_' . substr(md5($contact->id), 0, 8),
+                    'first_name' => 'ANON_'.substr(md5($contact->id), 0, 8),
                     'last_name' => 'ANON',
-                    'email' => 'deleted_' . $contact->id . '@gdpr.local',
+                    'email' => 'deleted_'.$contact->id.'@gdpr.local',
                     'phone' => null,
                     'street_address' => null,
                     'city' => null,
@@ -60,21 +59,23 @@ class GdprRetentionService
         }
 
         Log::info("GDPR: Anonymised {$count} contacts (retention: {$setting->retention_months} months)");
+
         return $count;
     }
 
     public function deleteExpiredEmailLogs(): int
     {
         $setting = GdprSetting::getRetentionFor('email_logs');
-        if (!$setting || !$setting->is_enabled) {
+        if (! $setting || ! $setting->is_enabled) {
             return 0;
         }
 
         $expiryDate = Carbon::now()->subMonths($setting->retention_months);
-        
+
         $count = DealEmailLog::where('created_at', '<', $expiryDate)->delete();
-        
+
         Log::info("GDPR: Deleted {$count} email logs (retention: {$setting->retention_months} months)");
+
         return $count;
     }
 
@@ -101,12 +102,12 @@ class GdprRetentionService
     protected function getPendingCount($model): int
     {
         $setting = GdprSetting::getRetentionFor((new $model)->getTable());
-        if (!$setting || !$setting->is_enabled) {
+        if (! $setting || ! $setting->is_enabled) {
             return 0;
         }
-        
+
         $expiryDate = Carbon::now()->subMonths($setting->retention_months);
-        
+
         return $model::whereNull('anonymised_at')
             ->where('created_at', '<', $expiryDate)
             ->count();
@@ -115,7 +116,7 @@ class GdprRetentionService
     public function scheduleSoftDeletionForInactiveUsers(int $months = 36): int
     {
         $cutoff = Carbon::now()->subMonths($months);
-        
+
         $users = User::whereNull('anonymised_at')
             ->where('last_activity_at', '<', $cutoff)
             ->whereDoesntHave('deals', function ($query) {
@@ -125,7 +126,7 @@ class GdprRetentionService
 
         foreach ($users as $user) {
             $user->update([
-                'marked_for_deletion_on' => Carbon::now()->addDays(30)->toDateString()
+                'marked_for_deletion_on' => Carbon::now()->addDays(30)->toDateString(),
             ]);
         }
 

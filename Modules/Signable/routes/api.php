@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use Modules\Signable\App\Http\Controllers\Api\SignableBrandingController;
 use Modules\Signable\App\Http\Controllers\Api\SignableContactController;
 use Modules\Signable\App\Http\Controllers\Api\SignableEnvelopeController;
@@ -7,7 +8,6 @@ use Modules\Signable\App\Http\Controllers\Api\SignableSettingsController;
 use Modules\Signable\App\Http\Controllers\Api\SignableTemplateController;
 use Modules\Signable\App\Http\Controllers\Api\SignableUserController;
 use Modules\Signable\App\Http\Controllers\Api\SignableWebhookController;
-use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->prefix('api/signable')->group(function (): void {
     // Envelopes
@@ -61,4 +61,3 @@ Route::middleware('api')->prefix('api/signable')->group(function (): void {
     Route::get('settings', [SignableSettingsController::class, 'show']);
     Route::put('settings', [SignableSettingsController::class, 'update']);
 });
-

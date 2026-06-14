@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('remittance_received')->nullable();
             $table->date('date_logged')->nullable();
 
-            //Compliance fields
+            // Compliance fields
             $table->date('starter_checklist_recieved_date')->nullable();
             $table->string('starter_form')->nullable();
             $table->string('tax_code')->nullable();

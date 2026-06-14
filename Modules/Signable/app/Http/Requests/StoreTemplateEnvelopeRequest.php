@@ -47,5 +47,3 @@ class StoreTemplateEnvelopeRequest extends FormRequest
         ];
     }
 }
-
-

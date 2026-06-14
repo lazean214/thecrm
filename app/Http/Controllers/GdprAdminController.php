@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\GdprSetting;
 use App\Models\GdprExportRequest;
+use App\Models\GdprSetting;
 use App\Services\GdprRetentionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -59,16 +58,16 @@ class GdprAdminController extends Controller
     public function runRetentionNow()
     {
         Artisan::call('gdpr:anonymize-expired');
-        
+
         $output = Artisan::output();
-        
-        return redirect()->back()->with('success', 'Retention job executed. ' . $output);
+
+        return redirect()->back()->with('success', 'Retention job executed. '.$output);
     }
 
     public function exportSettings()
     {
         $settings = GdprSetting::all();
-        
+
         return response()->json($settings, 200, [
             'Content-Disposition' => 'attachment; filename="gdpr-settings-backup.json"',
         ]);
@@ -81,7 +80,7 @@ class GdprAdminController extends Controller
         ]);
 
         $content = json_decode($request->file('settings_file')->get(), true);
-        
+
         foreach ($content as $setting) {
             GdprSetting::updateOrCreate(
                 ['entity_type' => $setting['entity_type']],

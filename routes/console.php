@@ -12,4 +12,4 @@ Schedule::command('deals:check-stale-stages')
     ->withoutOverlapping()
     ->runInBackground();
 
-    Schedule::command('gdpr:anonymize-expired')->daily();
+Schedule::command('gdpr:anonymize-expired')->daily();

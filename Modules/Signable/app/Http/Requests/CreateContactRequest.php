@@ -15,9 +15,8 @@ class CreateContactRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'contact_name'  => ['required', 'string', 'max:255'],
+            'contact_name' => ['required', 'string', 'max:255'],
             'contact_email' => ['required', 'email', 'max:255'],
         ];
     }
 }
-

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GdprExportRequest extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'user_id',
         'download_token',
         'file_path',

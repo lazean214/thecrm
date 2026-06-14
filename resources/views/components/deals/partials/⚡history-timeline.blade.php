@@ -11,60 +11,63 @@ new class extends Component
 {{-- components/deals/partials/⚡history-timeline.blade.php --}}
 
 <div class="flow-root">
-    <ul role="list" class="-mb-8">
-        @forelse($deal->histories as $history)
+    <ul role="list" class="-mb-6">
+        @forelse ($deal->histories as $history)
             <li>
-                <div class="relative pb-8">
-                    @if(!$loop->last)
-                        <span class="absolute top-5 left-5 -ml-px h-full w-0.5 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></span>
+                <div class="relative pb-6">
+                    @if (! $loop->last)
+                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></span>
                     @endif
                     <div class="relative flex items-start space-x-3">
                         <div class="relative">
-                            <div class="h-10 w-10 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-slate-900"
+                            <div class="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center ring-4 ring-white dark:ring-slate-800"
                                 @php
-                                    $icon = match($history->action) {
+                                    $icon = match ($history->action) {
                                         'created' => '🎉',
                                         'stage_moved' => '🔄',
                                         'details_updated' => '✏️',
                                         'association_updated' => '🔗',
                                         'owner_changed' => '👤',
-                                        default => '📝'
+                                        default => '📝',
                                     };
-                                @endphp
-                            >
-                                <span class="text-lg">{{ $icon }}</span>
+                                @endphp>
+                                <span class="text-sm">{{ $icon }}</span>
                             </div>
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div>
-                                <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                    {{ match($history->action) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">
+                                    {{ match ($history->action) {
                                         'created' => 'Deal Created',
                                         'stage_moved' => 'Stage Changed',
                                         'details_updated' => 'Details Updated',
                                         'association_updated' => 'Association Updated',
                                         'owner_changed' => 'Owner Changed',
-                                        default => ucfirst($history->action)
+                                        default => ucfirst($history->action),
                                     } }}
-                                </div>
+                                </span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500">
+                                    {{ $history->created_at->format('d M Y, H:i') }}
+                                </span>
+                            </div>
+                            @if ($history->details)
                                 <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                                     {{ $history->details }}
                                 </p>
-                                <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                                    {{ $history->created_at->format('d M Y, H:i') }}
-                                    @if($history->user)
-                                        by {{ $history->user->name }}
-                                    @else
-                                        by System
-                                    @endif
+                            @endif
+                            @if ($history->user)
+                                <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                                    by {{ $history->user->name }}
                                 </p>
-                            </div>
+                            @else
+                                <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">by System</p>
+                            @endif
                         </div>
                     </div>
                 </div>
             </li>
         @empty
-            <li class="text-center py-8 text-slate-400">
+            <li class="text-center py-8 text-sm text-slate-400 dark:text-slate-500">
                 No activity recorded yet
             </li>
         @endforelse

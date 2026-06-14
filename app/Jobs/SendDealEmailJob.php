@@ -2,12 +2,12 @@
 
 namespace App\Jobs;
 
-use Throwable;
-use App\Models\DealEmailLog;
 use App\Mail\DealEmailMailable;
-use Illuminate\Support\Facades\Mail;
+use App\Models\DealEmailLog;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class SendDealEmailJob implements ShouldQueue
 {

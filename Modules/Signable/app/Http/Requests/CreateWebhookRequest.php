@@ -15,9 +15,8 @@ class CreateWebhookRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'webhook_url'  => ['required', 'url', 'max:2048'],
+            'webhook_url' => ['required', 'url', 'max:2048'],
             'webhook_type' => ['required', 'string', 'max:100'],
         ];
     }
 }
-

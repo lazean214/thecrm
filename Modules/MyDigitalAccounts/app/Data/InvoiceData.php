@@ -8,7 +8,7 @@ use DateTimeImmutable;
 
 /**
  * Invoice Data Transfer Object
- * 
+ *
  * Represents an invoice/billing resource from the MyDigitalAccounts API
  */
 readonly class InvoiceData

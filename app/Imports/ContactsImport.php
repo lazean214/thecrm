@@ -3,18 +3,17 @@
 namespace App\Imports;
 
 use App\Models\Contact;
+use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class ContactsImport implements ToModel, WithHeadingRow, WithBatchInserts, WithChunkReading
+class ContactsImport implements ToModel, WithBatchInserts, WithChunkReading, WithHeadingRow
 {
     /**
-    * @param array $row
-    *
-    * @return \Illuminate\Database\Eloquent\Model|null
-    */
+     * @return Model|null
+     */
     public function model(array $row)
     {
         return new Contact([

@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/DealHistory.php
 
 namespace App\Models;

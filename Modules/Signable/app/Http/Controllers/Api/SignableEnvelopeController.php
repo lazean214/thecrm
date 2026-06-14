@@ -4,17 +4,18 @@ namespace Modules\Signable\App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Deal;
-use Modules\Signable\App\Http\Requests\SendEnvelopeRequest;
-use Modules\Signable\App\Http\Requests\StoreTemplateEnvelopeRequest;
-use Modules\Signable\App\Http\Requests\UpdateEnvelopePartyRequest;
-use Modules\Signable\App\Models\DealSignableEnvelope;
-use Modules\Signable\App\Services\Signable\SignableClient;
 use Carbon\Carbon;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Modules\Signable\App\Http\Requests\SendEnvelopeRequest;
+use Modules\Signable\App\Http\Requests\StoreTemplateEnvelopeRequest;
+use Modules\Signable\App\Http\Requests\UpdateEnvelopePartyRequest;
+use Modules\Signable\App\Models\DealSignableEnvelope;
+use Modules\Signable\App\Services\Signable\SignableClient;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
@@ -234,7 +235,7 @@ class SignableEnvelopeController extends Controller
             ], 500);
         }
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             @unlink($zipPath);
 
@@ -306,31 +307,31 @@ class SignableEnvelopeController extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => 'Unable to call Signable API.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
 
         if ($response->failed()) {
             return response()->json([
                 'message' => 'Signable rejected the envelope request.',
-                'status'  => $response->status(),
-                'error'   => $response->json() ?? ['raw' => $response->body()],
+                'status' => $response->status(),
+                'error' => $response->json() ?? ['raw' => $response->body()],
             ], $response->status());
         }
 
         return response()->json([
             'message' => 'Envelope created successfully.',
-            'data'    => $response->json() ?? ['raw' => $response->body()],
+            'data' => $response->json() ?? ['raw' => $response->body()],
         ], 201);
     }
 
-    private function proxy(\Illuminate\Http\Client\Response $response, int $successStatus = 200): JsonResponse
+    private function proxy(Response $response, int $successStatus = 200): JsonResponse
     {
         if ($response->failed()) {
             return response()->json([
                 'message' => 'Signable API returned an error.',
-                'status'  => $response->status(),
-                'error'   => $response->json() ?? ['raw' => $response->body()],
+                'status' => $response->status(),
+                'error' => $response->json() ?? ['raw' => $response->body()],
             ], $response->status());
         }
 
@@ -344,7 +345,7 @@ class SignableEnvelopeController extends Controller
     {
         return response()->json([
             'message' => 'Unable to call Signable API.',
-            'error'   => $message,
+            'error' => $message,
         ], 500);
     }
 
@@ -419,8 +420,8 @@ class SignableEnvelopeController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $requestPayload
-     * @param array<string, mixed> $responsePayload
+     * @param  array<string, mixed>  $requestPayload
+     * @param  array<string, mixed>  $responsePayload
      */
     private function persistDealEnvelope(int $dealId, array $requestPayload, array $responsePayload): void
     {
@@ -461,7 +462,7 @@ class SignableEnvelopeController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function extractEnvelopePayload(array $payload): array
@@ -487,8 +488,8 @@ class SignableEnvelopeController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $payload
-     * @param array<int, string> $keys
+     * @param  array<string, mixed>  $payload
+     * @param  array<int, string>  $keys
      */
     private function firstString(array $payload, array $keys): ?string
     {
@@ -519,4 +520,3 @@ class SignableEnvelopeController extends Controller
         }
     }
 }
-

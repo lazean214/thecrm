@@ -61,11 +61,10 @@ class DealsExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMappin
         if (! empty($this->filters['filterContact'])) {
             $query->whereHas(
                 'contacts',
-                fn ($q) => $q->where(
-                    \DB::raw("CONCAT(first_name, ' ', last_name)"),
-                    'like',
-                    '%'.$this->filters['filterContact'].'%'
-                )
+                function ($q) {
+                    $q->where('first_name', 'like', '%'.$this->filters['filterContact'].'%')
+                        ->orWhere('last_name', 'like', '%'.$this->filters['filterContact'].'%');
+                }
             );
         }
 

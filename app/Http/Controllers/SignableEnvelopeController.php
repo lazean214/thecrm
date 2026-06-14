@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\SignableEnvelope;
+use Illuminate\Http\Request;
 
 class SignableEnvelopeController extends Controller
 {
@@ -16,7 +16,7 @@ class SignableEnvelopeController extends Controller
         // Locate the tracked entity in your local DB
         $envelope = SignableEnvelope::where('envelope_fingerprint', $fingerprint)->first();
 
-        if (!$envelope) {
+        if (! $envelope) {
             return response()->json(['message' => 'Tracking envelope not found'], 404);
         }
 
@@ -26,7 +26,7 @@ class SignableEnvelopeController extends Controller
                 $envelope->status = 'signed';
                 $envelope->download_url = $request->input('envelope_download');
                 $envelope->completed_at = now();
-                
+
                 // Optional: Fire logic to auto-advance Deal pipeline status
                 $envelope->deal->update(['status' => 'Contract Signed']);
                 break;

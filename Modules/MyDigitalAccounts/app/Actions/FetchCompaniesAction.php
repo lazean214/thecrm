@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\MyDigitalAccounts\Actions;
 
+use Modules\MyDigitalAccounts\Data\CompanyData;
+use Modules\MyDigitalAccounts\Data\EmployeeData;
+use Modules\MyDigitalAccounts\Data\InvoiceData;
+use Modules\MyDigitalAccounts\Data\PaginatedData;
 use Modules\MyDigitalAccounts\Domain\MyDigitalAccountsClient;
-use Modules\MyDigitalAccounts\Data\{CompanyData, InvoiceData, EmployeeData, PaginatedData};
 
 /**
  * Fetch all companies from the API
- * 
+ *
  * Single-responsibility action that retrieves a paginated list of companies
  */
 class FetchCompaniesAction
@@ -20,11 +23,10 @@ class FetchCompaniesAction
 
     /**
      * Execute the action
-     * 
-     * @param int $page Page number (1-based)
-     * @param int $perPage Results per page
-     * @param array<string, mixed> $filters Additional filter parameters
-     * @return PaginatedData
+     *
+     * @param  int  $page  Page number (1-based)
+     * @param  int  $perPage  Results per page
+     * @param  array<string, mixed>  $filters  Additional filter parameters
      */
     public function execute(
         int $page = 1,
@@ -37,7 +39,7 @@ class FetchCompaniesAction
         ]);
 
         $response = $this->client->get('/companies', $params);
-        
+
         return PaginatedData::fromArray($response);
     }
 
@@ -47,14 +49,14 @@ class FetchCompaniesAction
     public function fetchById(string $companyId): CompanyData
     {
         $response = $this->client->get("/companies/{$companyId}");
-        
+
         return CompanyData::fromArray($response);
     }
 }
 
 /**
  * Create a new company in the API
- * 
+ *
  * Single-responsibility action that validates and creates a company resource
  */
 class CreateCompanyAction
@@ -65,8 +67,8 @@ class CreateCompanyAction
 
     /**
      * Execute the action
-     * 
-     * @param array<string, mixed> $data Company data
+     *
+     * @param  array<string, mixed>  $data  Company data
      */
     public function execute(array $data): CompanyData
     {
@@ -85,7 +87,7 @@ class CreateCompanyAction
 
     /**
      * Validate that required fields are present
-     * 
+     *
      * @throws \InvalidArgumentException
      */
     private function validateData(array $data): void
@@ -99,7 +101,7 @@ class CreateCompanyAction
         }
 
         // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("Invalid email format: {$data['email']}");
         }
     }
@@ -128,7 +130,7 @@ class CreateCompanyAction
 
 /**
  * Update an existing company
- * 
+ *
  * Single-responsibility action that updates a company resource
  */
 class UpdateCompanyAction
@@ -139,9 +141,9 @@ class UpdateCompanyAction
 
     /**
      * Execute the action
-     * 
-     * @param string $companyId Company ID to update
-     * @param array<string, mixed> $data Updated company data
+     *
+     * @param  string  $companyId  Company ID to update
+     * @param  array<string, mixed>  $data  Updated company data
      */
     public function execute(string $companyId, array $data): CompanyData
     {
@@ -160,7 +162,7 @@ class UpdateCompanyAction
             'postal_code' => $data['postal_code'] ?? null,
             'address' => $data['address'] ?? null,
             'is_active' => $data['is_active'] ?? null,
-        ], fn($value) => $value !== null);
+        ], fn ($value) => $value !== null);
 
         $response = $this->client->patch("/companies/{$companyId}", $payload);
 
@@ -170,7 +172,7 @@ class UpdateCompanyAction
 
 /**
  * Fetch all invoices from the API
- * 
+ *
  * Single-responsibility action that retrieves a paginated list of invoices
  */
 class FetchInvoicesAction
@@ -181,10 +183,10 @@ class FetchInvoicesAction
 
     /**
      * Execute the action
-     * 
-     * @param int $page Page number (1-based)
-     * @param int $perPage Results per page
-     * @param array<string, mixed> $filters Filter parameters (company_id, status, etc.)
+     *
+     * @param  int  $page  Page number (1-based)
+     * @param  int  $perPage  Results per page
+     * @param  array<string, mixed>  $filters  Filter parameters (company_id, status, etc.)
      */
     public function execute(
         int $page = 1,
@@ -236,7 +238,7 @@ class FetchInvoicesAction
 
 /**
  * Create a new invoice in the API
- * 
+ *
  * Single-responsibility action that validates and creates an invoice resource
  */
 class CreateInvoiceAction
@@ -247,8 +249,8 @@ class CreateInvoiceAction
 
     /**
      * Execute the action
-     * 
-     * @param array<string, mixed> $data Invoice data
+     *
+     * @param  array<string, mixed>  $data  Invoice data
      */
     public function execute(array $data): InvoiceData
     {
@@ -266,7 +268,7 @@ class CreateInvoiceAction
 
     /**
      * Validate required invoice fields
-     * 
+     *
      * @throws \InvalidArgumentException
      */
     private function validateData(array $data): void
@@ -314,7 +316,7 @@ class CreateInvoiceAction
 
 /**
  * Fetch all employees from the API
- * 
+ *
  * Single-responsibility action that retrieves a paginated list of employees
  */
 class FetchEmployeesAction
@@ -325,10 +327,10 @@ class FetchEmployeesAction
 
     /**
      * Execute the action
-     * 
-     * @param int $page Page number (1-based)
-     * @param int $perPage Results per page
-     * @param array<string, mixed> $filters Filter parameters
+     *
+     * @param  int  $page  Page number (1-based)
+     * @param  int  $perPage  Results per page
+     * @param  array<string, mixed>  $filters  Filter parameters
      */
     public function execute(
         int $page = 1,
@@ -379,7 +381,7 @@ class FetchEmployeesAction
 
 /**
  * Create a new employee in the API
- * 
+ *
  * Single-responsibility action that validates and creates an employee resource
  */
 class CreateEmployeeAction
@@ -390,8 +392,8 @@ class CreateEmployeeAction
 
     /**
      * Execute the action
-     * 
-     * @param array<string, mixed> $data Employee data
+     *
+     * @param  array<string, mixed>  $data  Employee data
      */
     public function execute(array $data): EmployeeData
     {
@@ -409,7 +411,7 @@ class CreateEmployeeAction
 
     /**
      * Validate required employee fields
-     * 
+     *
      * @throws \InvalidArgumentException
      */
     private function validateData(array $data): void
@@ -423,7 +425,7 @@ class CreateEmployeeAction
         }
 
         // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("Invalid email format: {$data['email']}");
         }
     }

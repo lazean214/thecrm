@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace Modules\MyDigitalAccounts\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\MyDigitalAccounts\Actions\CreateCompanyAction;
+use Modules\MyDigitalAccounts\Actions\CreateEmployeeAction;
+use Modules\MyDigitalAccounts\Actions\CreateInvoiceAction;
+use Modules\MyDigitalAccounts\Actions\FetchCompaniesAction;
+use Modules\MyDigitalAccounts\Actions\FetchEmployeesAction;
+use Modules\MyDigitalAccounts\Actions\FetchInvoicesAction;
+use Modules\MyDigitalAccounts\Actions\UpdateCompanyAction;
 use Modules\MyDigitalAccounts\Domain\MyDigitalAccountsClient;
-use Modules\MyDigitalAccounts\Actions\{
-    FetchCompaniesAction,
-    CreateCompanyAction,
-    UpdateCompanyAction,
-    FetchInvoicesAction,
-    CreateInvoiceAction,
-    FetchEmployeesAction,
-    CreateEmployeeAction,
-};
 
 /**
  * MyDigitalAccounts Service Provider
- * 
+ *
  * Registers all MyDigitalAccounts module services in the Laravel Service Container
  * as singletons. This provider should be registered in config/app.php
- * 
+ *
  * Add to config/app.php:
  * 'providers' => [
  *     ...
@@ -37,11 +35,11 @@ class MyDigitalAccountsServiceProvider extends ServiceProvider
     {
         // Publish configuration file
         $this->publishes([
-            __DIR__ . '/../../config/mydigitalaccounts.php' => config_path('mydigitalaccounts.php'),
+            __DIR__.'/../../config/mydigitalaccounts.php' => config_path('mydigitalaccounts.php'),
         ], 'mydigitalaccounts-config');
 
         // Load views
-        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'mydigitalaccounts');
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'mydigitalaccounts');
     }
 
     /**
@@ -51,13 +49,14 @@ class MyDigitalAccountsServiceProvider extends ServiceProvider
     {
         // Load configuration if not already published
         $this->mergeConfigFrom(
-            __DIR__ . '/../../config/mydigitalaccounts.php',
+            __DIR__.'/../../config/mydigitalaccounts.php',
             'mydigitalaccounts'
         );
 
         // Register the API Client as a singleton
         $this->app->singleton(MyDigitalAccountsClient::class, function ($app) {
             $config = $app['config']['mydigitalaccounts'];
+
             return new MyDigitalAccountsClient($config);
         });
 
@@ -136,7 +135,7 @@ class MyDigitalAccountsServiceProvider extends ServiceProvider
 
     /**
      * Register Manager/Facade bindings for convenience
-     * 
+     *
      * This allows accessing the client via: app('mydigitalaccounts.client')
      */
     private function registerManagers(): void
@@ -192,7 +191,7 @@ class MyDigitalAccountsServiceProvider extends ServiceProvider
 
 /**
  * Company Manager - Convenience class for managing company operations
- * 
+ *
  * Usage:
  * $manager = app('mydigitalaccounts.companies');
  * $companies = $manager->fetchAll(page: 1);

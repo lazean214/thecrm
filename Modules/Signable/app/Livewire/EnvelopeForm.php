@@ -11,19 +11,31 @@ class EnvelopeForm extends Component
     use WithFileUploads;
 
     public $deal;
+
     public $envelope_title = '';
+
     public $envelope_all_at_once_enabled = true;
+
     public $envelope_auto_expire_hours = 144;
+
     public $envelope_auto_remind_hours = 72;
+
     public $document_source = 'template';
+
     public $document_file;
+
     public $document_title = '';
+
     public $available_templates = [];
+
     public $selected_templates = [];
+
     public $envelope_parties = [
-        ['party_name' => '', 'party_email' => '', 'party_role' => 'signer1', 'party_message' => '']
+        ['party_name' => '', 'party_email' => '', 'party_role' => 'signer1', 'party_message' => ''],
     ];
+
     public $status_message = '';
+
     public $status_type = '';
 
     public function mount(SignableClient $signable)

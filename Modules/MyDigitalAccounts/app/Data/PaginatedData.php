@@ -6,13 +6,13 @@ namespace Modules\MyDigitalAccounts\Data;
 
 /**
  * Paginated Response Data Transfer Object
- * 
+ *
  * Represents a paginated collection response from the API
  */
 readonly class PaginatedData
 {
     /**
-     * @param array<int, array> $data
+     * @param  array<int, array>  $data
      */
     public function __construct(
         public array $data,

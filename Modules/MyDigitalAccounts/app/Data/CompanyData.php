@@ -8,7 +8,7 @@ use DateTimeImmutable;
 
 /**
  * Company Data Transfer Object
- * 
+ *
  * Represents a company/client resource from the MyDigitalAccounts API
  */
 readonly class CompanyData

@@ -16,8 +16,7 @@ class UpdateBrandingEmailRequest extends FormRequest
     {
         return [
             'branding_email_subject' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'branding_email_body'    => ['sometimes', 'nullable', 'string'],
+            'branding_email_body' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }
-

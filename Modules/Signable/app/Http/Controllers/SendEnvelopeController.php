@@ -12,4 +12,3 @@ class SendEnvelopeController extends Controller
         return view('signable::envelopes.send');
     }
 }
-

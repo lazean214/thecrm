@@ -30,5 +30,3 @@ class UpdateEnvelopePartyRequest extends FormRequest
         });
     }
 }
-
-

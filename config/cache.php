@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
 
 return [
@@ -126,11 +130,11 @@ return [
     */
 
     'serializable_classes' => [
-        \Illuminate\Support\Collection::class,
-        \Illuminate\Support\LazyCollection::class,
-        \Illuminate\Pagination\LengthAwarePaginator::class,
-        \Illuminate\Pagination\Paginator::class,
-        \stdClass::class,
+        Collection::class,
+        LazyCollection::class,
+        LengthAwarePaginator::class,
+        Paginator::class,
+        stdClass::class,
     ],
 
 ];

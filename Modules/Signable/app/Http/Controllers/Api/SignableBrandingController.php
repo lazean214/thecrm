@@ -3,11 +3,11 @@
 namespace Modules\Signable\App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Client\Response as ClientResponse;
+use Illuminate\Http\JsonResponse;
 use Modules\Signable\App\Http\Requests\UpdateBrandingEmailRequest;
 use Modules\Signable\App\Http\Requests\UpdateBrandingRequest;
 use Modules\Signable\App\Services\Signable\SignableClient;
-use Illuminate\Http\Client\Response as ClientResponse;
-use Illuminate\Http\JsonResponse;
 use Throwable;
 
 class SignableBrandingController extends Controller
@@ -63,8 +63,8 @@ class SignableBrandingController extends Controller
         if ($response->failed()) {
             return response()->json([
                 'message' => 'Signable API returned an error.',
-                'status'  => $response->status(),
-                'error'   => $response->json() ?? ['raw' => $response->body()],
+                'status' => $response->status(),
+                'error' => $response->json() ?? ['raw' => $response->body()],
             ], $response->status());
         }
 
@@ -78,8 +78,7 @@ class SignableBrandingController extends Controller
     {
         return response()->json([
             'message' => 'Unable to call Signable API.',
-            'error'   => $message,
+            'error' => $message,
         ], 500);
     }
 }
-

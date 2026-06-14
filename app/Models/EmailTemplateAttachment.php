@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class EmailTemplateAttachment extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'email_template_id',
         'file_name',
         'file_path',

@@ -27,6 +27,7 @@ class MyDigitalAccountsException extends Exception
 class MyDigitalAccountsApiException extends MyDigitalAccountsException
 {
     protected int $statusCode;
+
     protected array $apiResponse;
 
     public function __construct(

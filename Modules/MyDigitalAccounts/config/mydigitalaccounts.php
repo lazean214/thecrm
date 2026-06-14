@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 /**
  * MyDigitalAccounts API Configuration
- * 
+ *
  * This configuration file stores all settings for MyDigitalAccounts API integration,
  * including authentication credentials, endpoints, and request timeouts.
- * 
+ *
  * Environment variables should be defined in your .env file:
  * - MYDIGITALACCOUNTS_BASE_URL
  * - MYDIGITALACCOUNTS_CLIENT_ID

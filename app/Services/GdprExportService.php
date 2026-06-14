@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Contact;
 use App\Models\Company;
+use App\Models\Contact;
 use App\Models\Deal;
-use App\Models\User;
 use App\Models\GdprExportRequest;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -30,16 +30,17 @@ class GdprExportService
         // If user is sales team, they see only their contacts
         if ($user->isSalesTeam()) {
             $dealIds = $user->deals()->pluck('id');
-            return Contact::whereHas('deals', fn($q) => $q->whereIn('deals.id', $dealIds))
+
+            return Contact::whereHas('deals', fn ($q) => $q->whereIn('deals.id', $dealIds))
                 ->get()
-                ->map(fn($c) => $this->sanitizeContact($c))
+                ->map(fn ($c) => $this->sanitizeContact($c))
                 ->toArray();
         }
 
         // Compliance / admin see all contacts (but still GDPR filtered)
         return Contact::whereNull('anonymised_at')
             ->get()
-            ->map(fn($c) => $this->sanitizeContact($c))
+            ->map(fn ($c) => $this->sanitizeContact($c))
             ->toArray();
     }
 
@@ -48,7 +49,7 @@ class GdprExportService
         return $contact->only([
             'id', 'first_name', 'last_name', 'email', 'phone',
             'street_address', 'city', 'state', 'postal_code', 'country',
-            'date_of_birth', 'marital_status', 'gender', 'created_at'
+            'date_of_birth', 'marital_status', 'gender', 'created_at',
         ]);
     }
 
@@ -56,10 +57,12 @@ class GdprExportService
     {
         if ($user->isSalesTeam()) {
             $dealIds = $user->deals()->pluck('id');
-            return Company::whereHas('deals', fn($q) => $q->whereIn('deals.id', $dealIds))
+
+            return Company::whereHas('deals', fn ($q) => $q->whereIn('deals.id', $dealIds))
                 ->get()
                 ->toArray();
         }
+
         return Company::all()->toArray();
     }
 
@@ -69,22 +72,23 @@ class GdprExportService
         if ($user->isSalesTeam()) {
             $query->where('user_id', $user->id);
         }
-        return $query->get()->map(fn($deal) => [
+
+        return $query->get()->map(fn ($deal) => [
             'id' => $deal->id,
             'name' => $deal->name,
             'amount' => $deal->amount,
             'stage' => $deal->stage->value,
             'created_at' => $deal->created_at,
-            'contacts' => $deal->contacts->map(fn($c) => $c->only(['id', 'first_name', 'last_name', 'email'])),
-            'companies' => $deal->companies->map(fn($comp) => $comp->only(['id', 'name', 'email'])),
+            'contacts' => $deal->contacts->map(fn ($c) => $c->only(['id', 'first_name', 'last_name', 'email'])),
+            'companies' => $deal->companies->map(fn ($comp) => $comp->only(['id', 'name', 'email'])),
         ])->toArray();
     }
 
     public function storeExportAndGetToken(User $user): string
     {
         $data = $this->exportAllUserData($user);
-        $fileName = 'gdpr_export_' . $user->id . '_' . now()->format('Ymd_His') . '.json';
-        $filePath = 'gdpr_exports/' . $fileName;
+        $fileName = 'gdpr_export_'.$user->id.'_'.now()->format('Ymd_His').'.json';
+        $filePath = 'gdpr_exports/'.$fileName;
 
         Storage::disk('local')->put($filePath, json_encode($data, JSON_PRETTY_PRINT));
 
@@ -107,11 +111,12 @@ class GdprExportService
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$request || !Storage::disk('local')->exists($request->file_path)) {
+        if (! $request || ! Storage::disk('local')->exists($request->file_path)) {
             return null;
         }
 
         $content = Storage::disk('local')->get($request->file_path);
+
         return json_decode($content, true);
     }
 }
