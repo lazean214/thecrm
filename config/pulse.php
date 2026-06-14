@@ -66,6 +66,21 @@ return [
         'database' => [
             'connection' => env('PULSE_DB_CONNECTION'),
             'chunk' => 1000,
+            'tables' => [
+                'aggregates' => [
+                    'period' => 1,
+                    'type' => 50,
+                    'aggregate' => 50,
+                    'bucket' => 1,
+                ],
+                'entries' => [
+                    'type' => 50,
+                    'content' => 500,
+                ],
+                'values' => [
+                    'key' => 100,
+                ],
+            ],
         ],
     ],
 
