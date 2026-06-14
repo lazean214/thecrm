@@ -50,9 +50,9 @@ Thumbs.db
 # PHP actor
 .phpactor.json
 
-# Claude / AI tools
+# AI tool directories
 /.agents/
+/.claude/
+/.codex/
+/.cursor/
 /.gemini/
-
-# Process docs
-PROCESS.md

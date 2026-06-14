@@ -1,81 +1,175 @@
 # The CRM
 
-A modern, high-performance CRM built with the latest Laravel ecosystem. Designed for managing deals, contacts, companies, and compliance workflows with a focus on speed and developer experience.
+A modern, high-performance CRM built with the latest Laravel ecosystem. Designed for managing deals, contacts, companies, and compliance workflows with electronic document signing, GDPR compliance, and accounting integration.
 
 ## 🚀 Key Features
 
-- **Deal Management:** Robust deal tracking with automated history logging and stage-based permissions.
-- **Role-Based Access Control:** Distinct workflows for Sales and Compliance teams, restricting stage movements based on organizational roles.
-- **Advanced CRM Core:** Manage Contacts and Companies with many-to-many relationships and primary entity designations.
-- **Email Marketing & Designer:** Built-in email template designer with drag-and-drop builder fields and automated deal-related notifications.
-- **Document Signing:** Integration with Signable (via a dedicated module) for managing envelopes and tracking signing status.
-- **GDPR Compliance:** Dedicated tools for data export requests, retention policies, and admin controls for privacy management.
-- **Modern Authentication:** Secure access including Support for **Passkeys** and Two-Factor Authentication (2FA).
-- **Compliance Tracking:** Specialized fields for tracking checklists, tax codes, and contract dates directly within deals.
-- **Import/Export:** Support for CSV/Excel imports for companies and contacts, and comprehensive deal exports.
+- **Deal Pipeline** — Kanban board with drag-and-drop stage management or table view with pagination, column chooser, and batch operations
+- **5-Stage Workflow** — Doc Sent → Doc Signed → Compliant → Ready for Payment → Paid, with team-based stage restrictions
+- **Role-Based Access Control** — Sales teams see and edit only their own deals; Compliance teams have full visibility and control over all stages
+- **Advanced CRM Core** — Manage Contacts and Companies with many-to-many relationships, primary entity designations, and bulk import/export
+- **Electronic Document Signing** — Signable integration for creating, sending, and tracking signing envelopes directly from deals
+- **Email Template Designer** — Built-in drag-and-drop email designer with placeholder parsing, attachment support, and automated deal notifications
+- **Accounting Integration** — MyDigitalAccounts (MDA) module for syncing company data and managing umbrella company references
+- **GDPR Compliance** — Data export requests, configurable retention policies, automated anonymization, and admin dashboard
+- **Complete Audit Trail** — Every deal change (stage moves, field edits, owner transfers, association updates, document uploads) is logged with structured metadata
+- **Real-Time Updates** — Livewire polling with WebSocket broadcasting for live deal creation
+- **Modern Authentication** — Passkeys (WebAuthn), two-factor authentication (TOTP), email verification, and password reset via Laravel Fortify
+- **Performance Monitoring** — Laravel Pulse dashboard for tracking application health
 
 ## 🛠 Tech Stack
 
-- **Framework:** [Laravel 13](https://laravel.com)
-- **Frontend:** [Livewire 4](https://livewire.laravel.com)
-- **UI Components:** [Flux UI](https://fluxui.dev)
-- **Styling:** [Tailwind CSS 4](https://tailwindcss.com)
-- **Monitoring:** [Laravel Pulse](https://laravel.com/docs/pulse)
-- **Authentication:** [Laravel Fortify](https://laravel.com/docs/fortify)
-- **Database:** MySQL (optimized with strategic indexing)
-- **Media Management:** [Spatie Laravel MediaLibrary](https://spatie.be/docs/laravel-medialibrary)
-- **Excel/CSV:** [Laravel Excel](https://docs.laravel-excel.com)
-- **Testing:** [Pest PHP](https://pestphp.com)
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Laravel 13 |
+| **PHP** | 8.4 |
+| **Frontend** | Livewire 4 + Flux UI 2 |
+| **CSS** | Tailwind CSS 4 (zinc/slate palette, dark mode) |
+| **JS** | Alpine.js 3 (collapse, intersect plugins) |
+| **Database** | SQLite (dev) / MySQL (production) |
+| **Auth** | Laravel Fortify 1 (passkeys, 2FA) |
+| **API Tokens** | Laravel Sanctum 4 |
+| **Queues** | Database driver (scheduled worker) |
+| **Monitoring** | Laravel Pulse 1 |
+| **Media** | Spatie MediaLibrary |
+| **Excel/CSV** | Maatwebsite Excel 3 |
+| **Real-Time** | Laravel Echo 2 + Pusher |
+| **Testing** | Pest 4 |
+| **Modular** | nwidart/laravel-modules |
 
 ## 📦 Installation
 
-This project includes a convenient setup script to get you up and running quickly.
+### Prerequisites
+
+- PHP 8.4+
+- Composer 2.x
+- Node.js 18+
+- SQLite (for local development) or MySQL (for production)
+
+### Setup
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/lazean214/thecrm.git
    cd thecrm
    ```
 
-2. **Run the setup command:**
+2. **Install dependencies and configure:**
    ```bash
    composer run setup
    ```
-   *This will install dependencies (Composer & NPM), create your `.env` file, generate an app key, run migrations, and build assets.*
+   This installs Composer and NPM dependencies, creates `.env`, generates the app key, runs migrations, and builds assets.
 
-3. **Configure your Environment:**
-   Edit the `.env` file to set your database credentials and other service keys (Signable, MyDigitalAccounts, Mail, etc.).
+3. **Configure your environment:**
+   Edit `.env` for database, mail, and external service keys. For local development the defaults work with SQLite:
+   ```env
+   DB_CONNECTION=sqlite
+   SESSION_SECURE_COOKIE=false   # Set to true for production HTTPS
+   ```
 
-4. **Seed the Database (Optional):**
+4. **Seed sample data (optional):**
    ```bash
    php artisan db:seed
    ```
-   *Default Administrator: `admin@thecrm.com` / `password`*
+   Default admin user: `admin@thecrm.com` / `password`
+
+5. **Start the development environment:**
+   ```bash
+   composer run dev
+   ```
 
 ## 💻 Development
 
-Start the development server, queue listener, and Vite dev server simultaneously:
-
 ```bash
+# Start dev server + queue + Vite
 composer run dev
-```
 
-## 🧪 Testing
-
-Run the test suite using Pest (Unit & Feature tests):
-
-```bash
+# Run tests
 composer test
+
+# Format code
+vendor/bin/pint
+
+# Run a single test file
+php artisan test --compact tests/Feature/Api/DealApiTest.php
 ```
 
 ## 📂 Project Structure
 
-- `app/Models`: Core business logic and Eloquent models.
-- `app/Livewire`: Interactive UI components.
-- `Modules/Signable`: Integration module for electronic document signing.
-- `Modules/MyDigitalAccounts`: Integration module for accounting software.
-- `app/Services`: Business logic for GDPR, Email parsing, and Deal management.
-- `database/migrations`: Optimized database schema with performance indexes.
+```
+app/
+├── Console/Commands/        # Artisan commands (GDPR, deal staging)
+├── Enums/                   # DealStage, InternalCompany
+├── Exports/                 # Excel/CSV exports
+├── Http/                    # Controllers, requests, resources
+├── Imports/                 # Company and contact CSV imports
+├── Jobs/                    # SendDealEmailJob
+├── Mail/                    # DealEmailMailable
+├── Models/                  # Core models (Deal, Contact, Company, User, etc.)
+├── Notifications/           # Deal lifecycle notifications
+├── Observers/               # DealObserver (history logging)
+├── Services/                # Email, GDPR export/retention
+└── Traits/                  # LogsDealHistory, LogsContactHistory
+
+Modules/
+├── Signable/                # Electronic document signing integration
+│   ├── Http/Controllers/Api/  # 7 API controllers
+│   ├── Services/Signable/     # SignableClient (Guzzle)
+│   ├── Enums/                 # SignableStatus
+│   └── Livewire/              # EnvelopeForm
+└── MyDigitalAccounts/       # Accounting software integration (MDA v1 API)
+    ├── Domain/                  # MyDigitalAccountsClient
+    ├── Actions/                 # FetchCompaniesAction
+    └── Data/                    # DTOs (Company, Employee, Invoice)
+
+resources/views/
+├── components/deals/          # Deal pipeline (kanban, table, view, filters)
+│   └── partials/              # Kanban cards, stage navigator, history timeline
+├── components/contacts/       # Contact CRUD
+├── components/companies/      # Company CRUD
+├── components/dashboard/      # Pipeline report
+├── components/activities/     # Email designer, task comments
+├── components/signable/       # Envelope creation
+├── components/teams/          # Team management
+└── components/users/          # User management
+
+database/migrations/           # 37 migrations
+tests/                         # Pest test suite (30+ tests)
+```
+
+## 🔄 Deal Pipeline Stages
+
+| Stage | Value | Sales Can Move To | Compliance Can Move To |
+|-------|-------|:-----------------:|:----------------------:|
+| Doc Sent | `doc sent` | ✅ | ✅ |
+| Doc Signed | `doc signed` | ✅ | ✅ |
+| Compliant | `compliant` | ✅ | ✅ |
+| Ready for Payment | `ready for payment` | ❌ (Compliance only) | ✅ |
+| Paid | `paid` | ❌ (Compliance only) | ✅ |
+
+## 📡 External Services
+
+| Service | Purpose | Environment Variables |
+|---------|---------|----------------------|
+| **Signable** | Electronic document signing | `SIGNABLE_API_KEY`, `SIGNABLE_API_SERVER`, `SIGNABLE_API_SECRET` |
+| **MyDigitalAccounts** | Accounting sync | Module config (`config/mydigitalaccounts.php`) |
+| **Mail** | Email delivery | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT` |
+| **Pusher** | Real-time broadcasting | `PUSHER_APP_*` keys |
+
+## 🧪 Testing
+
+```bash
+# Full suite
+composer test
+
+# Specific test
+php artisan test --compact tests/Feature/Livewire/DealsTableTest.php
+
+# Filter by name
+php artisan test --compact --filter=DealApi
+```
+
+Test coverage includes API CRUD, Livewire component behavior, stage restriction enforcement, email template rendering, authentication flows, and settings management.
 
 ## 📜 License
 
