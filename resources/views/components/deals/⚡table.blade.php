@@ -21,9 +21,17 @@ new class extends Component {
     public int $paginationFrom = 0;
     public int $paginationTo = 0;
 
+    // --- Cursor Pagination ---
+    public ?string $cursor = null;
+    public ?string $previousCursor = null;
+    public ?string $nextCursor = null;
+    public bool $hasMorePages = false;
+    public bool $fromPreviousPage = false;
+
     // --- Lazy load (kanban view) ---
     public int $kanbanLoadedCount = 30;
     public bool $kanbanHasMore = false;
+    public ?string $kanbanCursor = null;
 
     // --- Column Visibility ---
     /** @var array<string> */
@@ -225,13 +233,22 @@ new class extends Component {
             $this->isDefaultDateRange = true;
         }
 
-        // Restore from cache if available — makes returning to the page instant
+        // Stale-while-revalidate: Show cached data instantly, refresh in background
         $cacheKey = $this->filterCacheKey('deals');
         $cached = Cache::get($cacheKey);
 
         if ($cached) {
             $this->deals = $cached['deals'] ?? [];
             $this->totalDeals = $cached['total'] ?? 0;
+            $this->cursor = $cached['cursor'] ?? null;
+            $this->nextCursor = $cached['nextCursor'] ?? null;
+            $this->previousCursor = $cached['previousCursor'] ?? null;
+            $this->hasMorePages = $cached['hasMorePages'] ?? false;
+            $this->kanbanCursor = $cached['kanbanCursor'] ?? null;
+            $this->kanbanHasMore = $cached['kanbanHasMore'] ?? false;
+
+            // Background refresh (non-blocking)
+            $this->dispatch('backgroundRefresh');
         } else {
             $this->loadDeals();
 
@@ -247,7 +264,7 @@ new class extends Component {
 
     /**
      * Cache the current deals snapshot so returning to the page is instant.
-     * Extended TTL (15 min) for better persistence when navigating between modules.
+     * Includes cursor state for seamless pagination restoration.
      */
     private function cacheDeals(): void
     {
@@ -256,7 +273,24 @@ new class extends Component {
         Cache::put($key, [
             'deals' => $this->deals,
             'total' => $this->view === 'table' ? $this->totalDeals : count($this->deals),
+            'cursor' => $this->cursor,
+            'nextCursor' => $this->nextCursor,
+            'previousCursor' => $this->previousCursor,
+            'hasMorePages' => $this->hasMorePages,
+            'kanbanCursor' => $this->kanbanCursor,
+            'kanbanHasMore' => $this->kanbanHasMore,
+            'cachedAt' => now()->timestamp,
         ], now()->addMinutes(15));
+    }
+
+    /**
+     * Background refresh - called after stale cache is shown.
+     * Does not block UI, updates cache silently.
+     */
+    #[On('backgroundRefresh')]
+    public function backgroundRefresh(): void
+    {
+        $this->loadDeals();
     }
 
     private function persistState(): void
@@ -478,13 +512,18 @@ new class extends Component {
             $this->paginationFrom = $this->totalDeals === 0 ? 0 : ($this->currentPage - 1) * $this->perPage + 1;
             $this->paginationTo = min($this->currentPage * $this->perPage, $this->totalDeals);
 
-            $this->deals = $query
+            // Cursor pagination — no offset penalty on deep pages
+            $cursorPaginated = $query
                 ->latest('updated_at')
-                ->skip(($this->currentPage - 1) * $this->perPage)
-                ->take($this->perPage)
-                ->get()
-                ->map($mapper)
-                ->toArray();
+                ->cursorPaginate($this->perPage, ['*'], 'cursor', $this->cursor);
+
+            $this->deals = $cursorPaginated->items();
+            $this->hasMorePages = $cursorPaginated->hasMorePages();
+            $this->nextCursor = $cursorPaginated->nextCursor()?->encoded();
+            $this->previousCursor = $cursorPaginated->previousCursor()?->encoded();
+
+            // Map to arrays after cursor pagination
+            $this->deals = collect($this->deals)->map($mapper)->toArray();
         } else {
             // Kanban — lazy load
             $totalKey = $this->filterCacheKey('kanban_total_');
@@ -492,12 +531,14 @@ new class extends Component {
 
             $this->kanbanHasMore = $total > $this->kanbanLoadedCount;
 
-            $this->deals = $query
+            // Cursor-based kanban loading
+            $kanbanPaginated = $query
                 ->latest('updated_at')
-                ->take($this->kanbanLoadedCount)
-                ->get()
-                ->map($mapper)
-                ->toArray();
+                ->cursorPaginate($this->kanbanLoadedCount, ['*'], 'kanban_cursor', $this->kanbanCursor);
+
+            $this->deals = collect($kanbanPaginated->items())->map($mapper)->toArray();
+            $this->kanbanHasMore = $kanbanPaginated->hasMorePages();
+            $this->kanbanCursor = $kanbanPaginated->nextCursor()?->encoded();
         }
 
         $this->cacheDeals();
@@ -511,8 +552,37 @@ new class extends Component {
 
     public function loadMoreKanban(): void
     {
-        $this->kanbanLoadedCount += 30;
-        $this->loadDeals();
+        if ($this->kanbanCursor) {
+            $this->loadDeals();
+            // Prefetch next batch in background
+            $this->dispatch('prefetchKanban');
+        }
+    }
+
+    /**
+     * Prefetch next kanban batch in background.
+     */
+    #[On('prefetchKanban')]
+    public function prefetchKanban(): void
+    {
+        if (! $this->kanbanCursor || ! $this->kanbanHasMore) {
+            return;
+        }
+
+        $query = $this->buildQuery();
+        $mapper = $this->getMapperClosure();
+
+        $prefeteched = $query
+            ->latest('updated_at')
+            ->cursorPaginate($this->kanbanLoadedCount, ['*'], 'kanban_cursor', $this->kanbanCursor)
+            ->items();
+
+        $prefetchKey = $this->filterCacheKey('kanban_prefetch');
+        Cache::put($prefetchKey, [
+            'deals' => collect($prefeteched)->map($mapper)->toArray(),
+            'kanbanCursor' => $this->kanbanCursor,
+            'kanbanHasMore' => $this->kanbanHasMore,
+        ], now()->addMinutes(5));
     }
 
     public function resetFilters(): void
@@ -522,6 +592,8 @@ new class extends Component {
         $this->isDefaultDateRange = true;
         $this->currentPage = 1;
         $this->kanbanLoadedCount = 30;
+        $this->cursor = null;
+        $this->kanbanCursor = null; // Reset kanban cursor on filter change
         $this->persistState();
         $this->loadDeals();
         $this->resetBatchState();
@@ -535,9 +607,106 @@ new class extends Component {
 
     public function goToPage(int $page): void
     {
+        // With cursor pagination, going to a specific page requires re-fetching from the beginning
+        // For better UX, we reset to page 1 when user picks a specific page number
         $this->currentPage = max(1, min($page, $this->totalPages));
+        $this->cursor = null;
         $this->loadDeals();
         $this->resetBatchState();
+    }
+
+    public function nextPage(): void
+    {
+        if ($this->nextCursor) {
+            $this->cursor = $this->nextCursor;
+            $this->currentPage++;
+            $this->loadDeals();
+            // Prefetch next page in background
+            $this->dispatch('prefetchNextPage');
+        }
+    }
+
+    public function previousPage(): void
+    {
+        if ($this->previousCursor) {
+            $this->cursor = $this->previousCursor;
+            $this->currentPage--;
+            $this->loadDeals();
+        }
+    }
+
+    /**
+     * Prefetch next page in background when user hovers on Next button.
+     * Uses separate cache key to avoid overwriting current data.
+     */
+    #[On('prefetchNextPage')]
+    public function prefetchNextPage(): void
+    {
+        if (! $this->nextCursor) {
+            return;
+        }
+
+        $query = $this->buildQuery();
+        $mapper = $this->getMapperClosure();
+
+        $prefeteched = $query
+            ->latest('updated_at')
+            ->cursorPaginate($this->perPage, ['*'], 'cursor', $this->nextCursor)
+            ->items();
+
+        $prefetchKey = $this->filterCacheKey('prefetch_next');
+        Cache::put($prefetchKey, [
+            'deals' => collect($prefeteched)->map($mapper)->toArray(),
+            'cursor' => $this->nextCursor,
+            'nextCursor' => null, // Will be set on actual load
+        ], now()->addMinutes(5));
+    }
+
+    private function getMapperClosure(): callable
+    {
+        return function ($deal) {
+            return [
+                'id' => $deal->id,
+                'name' => $deal->name,
+                'amount' => $deal->amount,
+                'stage' => $deal->stage instanceof \BackedEnum ? $deal->stage->value : (string) $deal->stage,
+                'user_id' => $deal->user_id,
+                'recruitment_agency' => $deal->recruitment_agency,
+                'consultant_name' => $deal->consultant_name,
+                'agency_deal_value' => $deal->agency_deal_value,
+                'margin_agreed' => $deal->margin_agreed,
+                'date_sent' => $deal->date_sent,
+                'date_signed' => $deal->date_signed,
+                'who_signed' => $deal->who_signed,
+                'right_to_work' => $deal->right_to_work,
+                'mda_reference_number' => $deal->mda_reference_number,
+                'date_set_up' => $deal->date_set_up,
+                'tax_code' => $deal->tax_code,
+                'created_at' => $deal->created_at?->toIso8601String(),
+                'updated_at' => $deal->updated_at?->toIso8601String(),
+                'user' => $deal->relationLoaded('user') ? [
+                    'id' => $deal->user->id,
+                    'name' => $deal->user->name,
+                    'email' => $deal->user->email,
+                ] : null,
+                'contacts' => $deal->relationLoaded('contacts')
+                    ? $deal->contacts->map(fn($c) => [
+                        'id' => $c->id,
+                        'first_name' => $c->first_name,
+                        'last_name' => $c->last_name,
+                    ])->all()
+                    : [],
+                'companies' => $deal->relationLoaded('companies')
+                    ? $deal->companies->map(fn($c) => [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'email' => $c->email,
+                        'phone' => $c->phone,
+                        'domain' => $c->domain,
+                    ])->all()
+                    : [],
+            ];
+        };
     }
 
     public function showAllTime(): void
@@ -547,6 +716,8 @@ new class extends Component {
         $this->isDefaultDateRange = false;
         $this->currentPage = 1;
         $this->kanbanLoadedCount = 30;
+        $this->cursor = null;
+        $this->kanbanCursor = null;
         $this->persistState();
         $this->loadDeals();
         $this->resetBatchState();
@@ -979,7 +1150,7 @@ new class extends Component {
                 @include('components.deals.partials.⚡kanban', ['stageConfig' => $stageConfig])
 
                 @if ($kanbanHasMore)
-                    <div x-data x-intersect.threshold.10="$wire.loadMoreKanban()" class="h-10 flex items-center justify-center">
+                    <div x-data x-intersect.threshold.10="$wire.loadMoreKanban()" x-intersect:enter.once="$dispatch('prefetchKanban')" class="h-10 flex items-center justify-center">
                         <svg class="w-5 h-5 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>

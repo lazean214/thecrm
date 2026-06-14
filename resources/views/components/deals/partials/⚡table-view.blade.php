@@ -428,51 +428,23 @@
     </table>
 </div>
 
-{{-- Pagination --}}
-@if ($totalPages > 1)
+{{-- Pagination (cursor-based with prefetch) --}}
+@if ($hasMorePages || $previousCursor)
     <div class="flex items-center justify-between mt-4 px-1">
         <div class="text-sm text-slate-500 dark:text-slate-400">
-            Page {{ $currentPage }} of {{ $totalPages }}
+            Showing {{ count($deals) }} deals per page
         </div>
 
-        <div class="flex items-center gap-1">
-            <button wire:click="goToPage({{ max(1, $currentPage - 1) }})" @disabled($currentPage === 1)
+        <div class="flex items-center gap-2">
+            <button wire:click="previousPage()" @disabled(!$previousCursor)
                 class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                ‹ Prev
+                ‹ Previous
             </button>
 
-            @php
-                $start = max(1, $currentPage - 2);
-                $end = min($totalPages, $currentPage + 2);
-            @endphp
-
-            @if ($start > 1)
-                <button wire:click="goToPage(1)"
-                    class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">1</button>
-                @if ($start > 2)
-                    <span class="px-2 text-slate-400">…</span>
-                @endif
-            @endif
-
-            @for ($p = $start; $p <= $end; $p++)
-                <button wire:click="goToPage({{ $p }})"
-                    class="px-3 py-1.5 rounded-md text-sm border transition
-                        {{ $p === $currentPage
-                            ? 'bg-indigo-600 border-indigo-600 text-white font-medium'
-                            : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}">
-                    {{ $p }}
-                </button>
-            @endfor
-
-            @if ($end < $totalPages)
-                @if ($end < $totalPages - 1)
-                    <span class="px-2 text-slate-400">…</span>
-                @endif
-                <button wire:click="goToPage({{ $totalPages }})"
-                    class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">{{ $totalPages }}</button>
-            @endif
-
-            <button wire:click="goToPage({{ min($totalPages, $currentPage + 1) }})" @disabled($currentPage === $totalPages)
+            <button
+                wire:click="nextPage()"
+                @mouseenter="$dispatch('prefetchNextPage')"
+                @disabled(!$hasMorePages)
                 class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
                 Next ›
             </button>
