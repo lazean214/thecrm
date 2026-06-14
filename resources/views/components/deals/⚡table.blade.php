@@ -154,23 +154,30 @@ new class extends Component {
             $this->isDefaultDateRange = true;
         }
 
-        // Fetch directly instead of calling a method
-        $query = $this->buildKanbanQuery();
-        $deals = $query->get();
+        // Stale-while-revalidate: use cache if fresh, fetch fresh in background
+        $this->loadWithStaleCache();
+    }
 
-        $stages = [];
-        foreach (DealStage::cases() as $stage) {
-            $stageDeals = $deals->where('stage', $stage->value)->values();
-            $stages[$stage->value] = [
-                'deals' => $stageDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
-                'count' => $stageDeals->count(),
-                'total_amount' => (float) $stageDeals->sum('amount'),
-            ];
+    public function loadWithStaleCache(): void
+    {
+        $cacheKey = $this->kanbanCacheKey();
+        $cached = Cache::get($cacheKey);
+
+        // Use cached data if available (max 30 seconds stale)
+        if ($cached && isset($cached['stages']) && ! $this->hasActiveFilters()) {
+            $this->kanbanData = $cached['stages'];
+            $staleAge = isset($cached['cached_at']) ? now()->timestamp - $cached['cached_at'] : 999;
+
+            // Refresh in background if stale (only for kanban view, no filters)
+            if ($staleAge > 30 && $this->view === 'kanban') {
+                $this->dispatch('backgroundRefreshKanban');
+            }
+
+            return;
         }
-        $this->kanbanData = $stages;
 
-        // Log for debugging
-        logger('mount: loaded ' . $deals->count() . ' deals into kanbanData');
+        // No cache or has filters - fetch fresh
+        $this->refreshKanbanData();
     }
 
     // ─────────────────────────────────────────────────────
