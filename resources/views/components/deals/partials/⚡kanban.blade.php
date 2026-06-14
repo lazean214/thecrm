@@ -245,15 +245,17 @@
             dragOverStage: null,
 
             init() {
-                // Try to use localStorage cache for instant render
-                const cached = readCache();
-                if (cached && Object.keys(cached).length > 0) {
-                    this.kanbanData = cached;
-                } else {
-                    // No cache, use server data
+                // Use server data passed via props as primary source
+                // Only fall back to localStorage if no server data is available
+                if (kanbanDataMap && Object.keys(kanbanDataMap).length > 0) {
                     this.kanbanData = kanbanDataMap;
-                    if (Object.keys(this.kanbanData).length > 0) {
-                        writeCache(this.kanbanData);
+                    // Update localStorage with fresh server data
+                    writeCache(this.kanbanData);
+                } else {
+                    // No server data, try localStorage cache
+                    const cached = readCache();
+                    if (cached && Object.keys(cached).length > 0) {
+                        this.kanbanData = cached;
                     }
                 }
 
