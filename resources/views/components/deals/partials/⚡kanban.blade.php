@@ -3,29 +3,14 @@
 @php
     $isSalesUser = $this->isSalesTeam();
     $editableStages = $this->getEditableStages();
-    $cacheKey =
-        'kanban_deals_' .
-        md5(
-            json_encode([
-                $this->filterDealName,
-                $this->filterOwner,
-                $this->filterContact,
-                $this->filterCompanyName,
-                $this->filterStage,
-                $this->minAmount,
-                $this->maxAmount,
-                $this->dateFrom,
-                $this->dateTo,
-                auth()->id(),
-            ]),
-        );
+    // Debug: log data shape
+    // logger('kanbanData', json_encode($kanbanData));
 @endphp
 
 <div x-data="kanbanBoard({
-    livewireDeals: {{ Js::from($this->deals) }},
-    stages: {{ Js::from($this->stages) }},
+    kanbanData: {{ Js::from($kanbanData) }},
+    stages: {{ Js::from($stages) }},
     stageConfig: {{ Js::from($stageConfig) }},
-    cacheKey: '{{ $cacheKey }}',
     isSalesUser: {{ $isSalesUser ? 'true' : 'false' }},
     editableStages: {{ Js::from($editableStages) }},
 })" x-init="init()" @realtime-new-deal.window="handleNewDeal($event)"
@@ -64,7 +49,7 @@
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                     <span class="text-white/80 text-xs tabular-nums font-normal bg-black/20 rounded-full px-2 py-0.5"
-                        x-text="getDealsByStage(stage).length"></span>
+                        x-text="getStageCount(stage)"></span>
                     <template x-if="isSalesUser && !canEditStage(stage)">
                         <span class="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">🔒</span>
                     </template>
@@ -121,7 +106,7 @@
                                 {{-- Amount --}}
                                 <div class="flex items-center justify-between gap-2 mb-3">
                                     <span class="text-sm font-bold text-slate-800 dark:text-white tabular-nums"
-                                        x-text="'£' + Number(deal.amount).toLocaleString('en-GB', {maximumFractionDigits:0})"></span>
+                                        x-text="'£' + (Number(deal.amount) || 0).toLocaleString('en-GB', {maximumFractionDigits:0})"></span>
                                     <template x-if="deal.contacts && deal.contacts[0]">
                                         <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full
                                                      bg-slate-100 dark:bg-slate-700
@@ -177,56 +162,67 @@
 
 <script>
     /**
-     * Kanban board Alpine component.
+     * Kanban Board Alpine Component
      *
      * Strategy:
-     *  1. On init — serve deals from localStorage for instant render.
-     *  2. On drag-drop — move card locally (optimistic), fire $wire.updateStage().
-     *  3. After server update — persist back to localStorage.
+     *  1. Serve pre-rendered server data immediately
+     *  2. Cache to localStorage for instant return visits
+     *  3. Optimistic updates on drag-drop
+     *  4. Background sync with server
      */
     function kanbanBoard({
-        livewireDeals,
+        kanbanData,
         stages,
         stageConfig,
-        cacheKey,
         isSalesUser,
         editableStages
     }) {
+        const CACHE_KEY = `kanban_v1_{{ auth()->id() }}`;
+        const MAX_CACHE_AGE_MS = 15 * 60 * 1000; // 15 min
 
-        const CACHE_VERSION = 1;
-        const MAX_CACHE_AGE_MS = 10 * 60 * 1000; // 10 min
+        // Initialize kanbanData from server
+        let kanbanDataMap = {};
+
+        // Convert array format to stage-keyed map
+        if (kanbanData && typeof kanbanData === 'object') {
+            // If it's already keyed by stage
+            if (kanbanData['doc sent'] || kanbanData['doc signed']) {
+                kanbanDataMap = kanbanData;
+            } else {
+                // Convert from stages array format
+                Object.keys(kanbanData).forEach(stage => {
+                    if (kanbanData[stage] && kanbanData[stage].deals) {
+                        kanbanDataMap[stage] = kanbanData[stage].deals;
+                    }
+                });
+            }
+        }
 
         function readCache() {
             try {
-                const raw = localStorage.getItem(cacheKey);
+                const raw = localStorage.getItem(CACHE_KEY);
                 if (!raw) return null;
-                const { v, ts, deals } = JSON.parse(raw);
-                if (v !== CACHE_VERSION) return null;
+                const { v, ts, data } = JSON.parse(raw);
+                if (v !== 1) return null;
                 if (Date.now() - ts > MAX_CACHE_AGE_MS) return null;
-                return deals;
+                return data;
             } catch {
                 return null;
             }
         }
 
-        function writeCache(deals) {
+        function writeCache(data) {
             try {
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    v: CACHE_VERSION,
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    v: 1,
                     ts: Date.now(),
-                    deals,
+                    data,
                 }));
-            } catch { /* quota — skip */ }
-        }
-
-        function mergeDeals(local, incoming) {
-            const map = new Map(local.map(d => [d.id, d]));
-            for (const d of incoming) map.set(d.id, d);
-            return Array.from(map.values());
+            } catch { /* quota */ }
         }
 
         return {
-            deals: [],
+            kanbanData: kanbanDataMap,
             stages,
             stageConfig,
             isSalesUser,
@@ -234,60 +230,69 @@
             draggingId: null,
             draggingStage: null,
             dragOverStage: null,
-            isFirstLoad: true,
 
             init() {
-                this.$wire.$on('view-changed', (event) => {
-                    if (event.view === 'kanban') {
-                        try { localStorage.removeItem(cacheKey); } catch (e) {}
-                        this.deals = livewireDeals;
-                        if (this.deals && this.deals.length > 0) {
-                            writeCache(this.deals);
-                        }
-                    }
-                });
-
+                // Try to use localStorage cache for instant render
                 const cached = readCache();
-                if (cached && cached.length > 0 && !this.isFirstLoad) {
-                    this.deals = cached;
+                if (cached && Object.keys(cached).length > 0) {
+                    this.kanbanData = cached;
                 } else {
-                    this.deals = livewireDeals;
-                    if (livewireDeals && livewireDeals.length > 0) {
-                        writeCache(this.deals);
+                    // No cache, use server data
+                    this.kanbanData = kanbanDataMap;
+                    if (Object.keys(this.kanbanData).length > 0) {
+                        writeCache(this.kanbanData);
                     }
                 }
-                this.isFirstLoad = false;
 
-                this.$nextTick(() => {
-                    if (livewireDeals && livewireDeals.length > 0) {
-                        this.deals = mergeDeals(this.deals, livewireDeals);
-                        writeCache(this.deals);
+                // Watch for Livewire updates
+                this.$watch('$wire.kanbanData', (serverData) => {
+                    if (serverData && Object.keys(serverData).length > 0) {
+                        // Merge with current state
+                        this.syncWithServer(serverData);
                     }
                 });
 
-                this.$watch('$wire.deals', (fresh) => {
-                    if (fresh && fresh.length > 0) {
-                        if (JSON.stringify(this.deals) !== JSON.stringify(fresh)) {
-                            this.deals = mergeDeals(this.deals, fresh);
-                            writeCache(this.deals);
-                        }
-                    }
-                });
-
+                // Listen for refresh events
                 this.$wire.$on('deals-updated', () => {
-                    if (this.deals && this.deals.length > 0) {
-                        writeCache(this.deals);
+                    this.saveState();
+                });
+            },
+
+            syncWithServer(serverData) {
+                // Convert server format to our format
+                const newData = {};
+                Object.keys(serverData).forEach(stage => {
+                    if (serverData[stage] && serverData[stage].deals) {
+                        newData[stage] = serverData[stage].deals;
                     }
                 });
+
+                if (Object.keys(newData).length > 0) {
+                    this.kanbanData = newData;
+                    this.saveState();
+                }
+            },
+
+            saveState() {
+                if (Object.keys(this.kanbanData).length > 0) {
+                    writeCache(this.kanbanData);
+                }
             },
 
             handleNewDeal(event) {
                 const detail = event.detail;
                 if (detail.target_user_id != {{ auth()->id() }}) return;
                 const newDeal = detail.deal || detail;
-                if (!this.deals.some(d => d.id === newDeal.id)) {
-                    this.deals.unshift(newDeal);
-                    writeCache(this.deals);
+
+                // Add to correct stage
+                const stage = newDeal.stage;
+                if (!this.kanbanData[stage]) {
+                    this.kanbanData[stage] = [];
+                }
+
+                if (!this.kanbanData[stage].some(d => d.id === newDeal.id)) {
+                    this.kanbanData[stage].unshift(newDeal);
+                    this.saveState();
                 }
             },
 
@@ -296,12 +301,16 @@
             },
 
             getDealsByStage(stage) {
-                return this.deals.filter(d => d.stage === stage);
+                return this.kanbanData[stage]?.deals || [];
+            },
+
+            getStageCount(stage) {
+                return this.kanbanData[stage]?.count || 0;
             },
 
             getStageSum(stage) {
-                return this.getDealsByStage(stage)
-                    .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+                // Use pre-computed total_amount from server
+                return this.kanbanData[stage]?.total_amount || 0;
             },
 
             timeAgo(dateStr) {
@@ -349,26 +358,55 @@
                 const fromStage = this.draggingStage;
                 this.resetDrag();
 
-                const deal = this.deals.find(d => d.id === dealId);
+                // Find the deal
+                const deal = this.findDeal(dealId);
                 if (!deal) return;
-                deal.stage = targetStage;
-                writeCache(this.deals);
+
+                // Optimistic update - move locally first
+                this.moveDealLocally(dealId, fromStage, targetStage);
 
                 try {
                     await this.$wire.updateStage(dealId, targetStage);
                 } catch (err) {
-                    const revert = this.deals.find(d => d.id === dealId);
-                    if (revert) {
-                        revert.stage = fromStage;
-                        writeCache(this.deals);
-                    }
-                    const card = document.querySelector(`[data-deal-id='${dealId}']`);
-                    if (card) {
-                        card.style.transition = 'transform .1s ease';
-                        const shake = [0, -6, 6, -4, 4, 0]
-                            .map((x, i) => setTimeout(() => card.style.transform = `translateX(${x}px)`, i * 60));
-                        setTimeout(() => card.style.transform = '', 6 * 60 + 50);
-                    }
+                    // Revert on error
+                    this.moveDealLocally(dealId, targetStage, fromStage);
+                    this.shakeCard(dealId);
+                }
+            },
+
+            findDeal(dealId) {
+                for (const stage of this.stages) {
+                    const deal = (this.kanbanData[stage] || []).find(d => d.id === dealId);
+                    if (deal) return deal;
+                }
+                return null;
+            },
+
+            moveDealLocally(dealId, fromStage, toStage) {
+                const fromDeals = this.kanbanData[fromStage] || [];
+                const toDeals = this.kanbanData[toStage] || [];
+
+                const dealIndex = fromDeals.findIndex(d => d.id === dealId);
+                if (dealIndex === -1) return;
+
+                const [deal] = fromDeals.splice(dealIndex, 1);
+                deal.stage = toStage;
+                toDeals.unshift(deal);
+
+                this.kanbanData[fromStage] = fromDeals;
+                this.kanbanData[toStage] = toDeals;
+
+                this.saveState();
+            },
+
+            shakeCard(dealId) {
+                const card = document.querySelector(`[data-deal-id='${dealId}']`);
+                if (card) {
+                    card.style.transition = 'transform .1s ease';
+                    [0, -6, 6, -4, 4, 0].forEach((x, i) => {
+                        setTimeout(() => card.style.transform = `translateX(${x}px)`, i * 60);
+                    });
+                    setTimeout(() => card.style.transform = '', 6 * 60 + 50);
                 }
             },
 
