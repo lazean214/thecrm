@@ -30,7 +30,7 @@
                 </button>
             @endif
             <button
-                @click="open = true"
+                @click="open = true; $wire.loadLookups()"
                 type="button"
                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition relative"
             >

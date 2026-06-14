@@ -22,7 +22,7 @@ new class extends Component {
     public int $paginationTo = 0;
 
     // --- Lazy load (kanban view) ---
-    public int $kanbanLoadedCount = 50;
+    public int $kanbanLoadedCount = 30;
     public bool $kanbanHasMore = false;
 
     // --- Column Visibility ---
@@ -76,8 +76,11 @@ new class extends Component {
     public bool $showBatchModal = false;
     public bool $showConfirmModal = false;
     public string $confirmMessage = '';
+
+    // --- Deferred lookup data (loaded on demand) ---
     public array $allUsers = [];
     public array $allCompanies = [];
+    public bool $lookupsLoaded = false;
 
     // Cache key derived from current filter state
     private function filterCacheKey(string $prefix = ''): string
@@ -125,7 +128,7 @@ new class extends Component {
     private function onFilterChanged(): void
     {
         $this->currentPage = 1;
-        $this->kanbanLoadedCount = 50;
+        $this->kanbanLoadedCount = 30;
         $this->persistState();
         $this->loadDeals();
         $this->resetBatchState();
@@ -153,16 +156,26 @@ new class extends Component {
         $this->resetBatchState();
     }
 
+    /**
+     * Load lookup data (users, companies) on demand.
+     * Called via wire:click when the user opens the filter modal.
+     */
+    #[On('loadLookups')]
+    public function loadLookups(): void
+    {
+        if (! $this->lookupsLoaded) {
+            $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
+            $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
+            $this->lookupsLoaded = true;
+        }
+    }
+
     public function mount(): void
     {
         $this->stages = array_map(
             fn ($s) => $s->value,
             [DealStage::DOC_SENT, DealStage::DOC_SIGNED, DealStage::COMPLIANT, DealStage::READY_FOR_PAYMENT, DealStage::PAID],
         );
-
-        $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
-
-        $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
 
         // Restore persisted view state
         $state = session('deals_view_state', []);
@@ -190,8 +203,9 @@ new class extends Component {
 
         $this->loadDeals();
 
-        // Auto-widen: if default month filter returns < 100 results, show all
-        if ($this->isDefaultDateRange && $this->getTotalResultCount() < 100) {
+        // Auto-widen: if default month filter returns < 100 results, show all-time.
+        // Only do this once — skip the double-query if we already have 30+ records.
+        if ($this->isDefaultDateRange && $this->getTotalResultCount() < 30) {
             $this->dateFrom = null;
             $this->isDefaultDateRange = false;
             $this->loadDeals();
@@ -283,9 +297,7 @@ new class extends Component {
 
     /**
      * Build the base query with eager-loaded relations.
-     * Only applies filters that affect the deal selection itself
-     * (stage + user_id + date). Relation-based filters are applied
-     * via whereHas and cannot be optimised with simple indexes.
+     * Only loads the fields actually used by the UI.
      */
     private function buildQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -363,7 +375,7 @@ new class extends Component {
         if ($this->view === 'table') {
             // Use short-lived cache for count to avoid repeated COUNT(*)
             $countKey = $this->filterCacheKey('count_');
-            $this->totalDeals = Cache::remember($countKey, now()->addSeconds(10), fn () => (clone $query)->count());
+            $this->totalDeals = Cache::remember($countKey, now()->addSeconds(30), fn () => (clone $query)->count());
 
             $this->totalPages = max(1, (int) ceil($this->totalDeals / $this->perPage));
             $this->currentPage = min($this->currentPage, $this->totalPages);
@@ -381,7 +393,7 @@ new class extends Component {
         } else {
             // Kanban — lazy load
             $totalKey = $this->filterCacheKey('kanban_total_');
-            $total = Cache::remember($totalKey, now()->addSeconds(10), fn () => (clone $query)->count());
+            $total = Cache::remember($totalKey, now()->addSeconds(30), fn () => (clone $query)->count());
 
             $this->kanbanHasMore = $total > $this->kanbanLoadedCount;
 
@@ -402,7 +414,7 @@ new class extends Component {
 
     public function loadMoreKanban(): void
     {
-        $this->kanbanLoadedCount += 50;
+        $this->kanbanLoadedCount += 30;
         $this->loadDeals();
     }
 
@@ -412,12 +424,12 @@ new class extends Component {
         $this->dateFrom = now()->startOfMonth()->toDateString();
         $this->isDefaultDateRange = true;
         $this->currentPage = 1;
-        $this->kanbanLoadedCount = 50;
+        $this->kanbanLoadedCount = 30;
         $this->persistState();
         $this->loadDeals();
         $this->resetBatchState();
 
-        if ($this->isDefaultDateRange && $this->getTotalResultCount() < 100) {
+        if ($this->isDefaultDateRange && $this->getTotalResultCount() < 30) {
             $this->dateFrom = null;
             $this->isDefaultDateRange = false;
             $this->loadDeals();
@@ -437,7 +449,7 @@ new class extends Component {
         $this->dateTo = null;
         $this->isDefaultDateRange = false;
         $this->currentPage = 1;
-        $this->kanbanLoadedCount = 50;
+        $this->kanbanLoadedCount = 30;
         $this->persistState();
         $this->loadDeals();
         $this->resetBatchState();
@@ -702,7 +714,7 @@ new class extends Component {
     {
         $this->view = $view;
         $this->currentPage = 1;
-        $this->kanbanLoadedCount = 50;
+        $this->kanbanLoadedCount = 30;
         $this->persistState();
         $this->loadDeals();
         // Notify Alpine to clear cache and reload
@@ -755,7 +767,6 @@ new class extends Component {
 
 <div class="space-y-6 w-full mx-auto p-4 sm:p-6 lg:p-8 antialiased text-slate-900 dark:text-slate-100">
     <div
-        wire:poll.5s="refreshDeals"
         x-data="{
             draggingId: null,
             draggingStage: null,
@@ -788,7 +799,7 @@ new class extends Component {
                     </p>
                 </div>
 
-                {{-- View toggle + Export --}}
+                {{-- View toggle + Refresh + Export --}}
                 <div class="flex items-center gap-2 shrink-0">
                     <div class="inline-flex rounded-lg shadow-sm bg-slate-100 dark:bg-slate-800 p-1 gap-0.5">
                         <button wire:click="setView('kanban')"
@@ -812,6 +823,17 @@ new class extends Component {
                             Table
                         </button>
                     </div>
+                    <button wire:click="refreshDeals" wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
+                        title="Refresh">
+                        <svg wire:loading.remove wire:target="refreshDeals" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <svg wire:loading wire:target="refreshDeals" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+                        </svg>
+                    </button>
                     @include('components.deals.partials.⚡export', ['exportUrl' => $this->exportUrl()])
                 </div>
             </div>

@@ -485,7 +485,7 @@ new class extends Component {
     ];
 @endphp
 
-<div wire:poll.10s="loadDeal" class="min-h-screen">
+<div class="min-h-screen">
     {{-- Toast notifications --}}
     <div x-data="{ show: false, message: '', type: 'success' }"
         x-on:notify.window="show = true; message = $event.detail.message; type = $event.detail.type; setTimeout(() => show = false, 3000);"
