@@ -12,60 +12,83 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
+
+                {{-- CRM --}}
+                <flux:sidebar.group :heading="__('CRM')">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="building-storefront" :href="route('deals')" :current="request()->routeIs('deals')" wire:navigate>
+                    <flux:sidebar.item icon="building-storefront" :href="route('deals')" :current="request()->routeIs('deals*')" wire:navigate>
                         {{ __('Deals') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="user-group" :href="route('contacts')" :current="request()->routeIs('contacts')" wire:navigate>
+                    <flux:sidebar.item icon="user-group" :href="route('contacts')" :current="request()->routeIs('contacts*')" wire:navigate>
                         {{ __('Contacts') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="building-office" :href="route('companies')" :current="request()->routeIs('companies')" wire:navigate>
+                    <flux:sidebar.item icon="building-office" :href="route('companies')" :current="request()->routeIs('companies*')" wire:navigate>
                         {{ __('Companies') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="pencil-square" :href="route('designer')" :current="request()->routeIs('designer')" wire:navigate>
+                </flux:sidebar.group>
+
+                {{-- Tools --}}
+                <flux:sidebar.group :heading="__('Tools')">
+                    <flux:sidebar.item icon="envelope" :href="route('envelopes.index')" :current="request()->routeIs('envelopes*')" wire:navigate>
+                        {{ __('Envelopes') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="pencil-square" :href="route('designer')" :current="request()->routeIs('designer*')" wire:navigate>
                         {{ __('Email Designer') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="rectangle-group" :href="route('teams')" :current="request()->routeIs('teams')" wire:navigate>
-                        {{ __('Teams') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="user-circle" :href="route('users')" :current="request()->routeIs('users')" wire:navigate>
+                </flux:sidebar.group>
+
+                {{-- Administration --}}
+                <flux:sidebar.group :heading="__('Administration')">
+                    <flux:sidebar.item icon="user-circle" :href="route('users')" :current="request()->routeIs('users*')" wire:navigate>
                         {{ __('Users') }}
                     </flux:sidebar.item>
-@can('manage-gdpr')
-                    <flux:sidebar.item icon="shield-check" :href="route('admin.gdpr.dashboard')" :current="request()->routeIs('admin.gdpr.dashboard')" wire:navigate>
-                        {{ __('GDPR Compliance') }}
+                    <flux:sidebar.item icon="rectangle-group" :href="route('teams')" :current="request()->routeIs('teams*')" wire:navigate>
+                        {{ __('Teams') }}
                     </flux:sidebar.item>
+                    @can('manage-gdpr')
+                        <flux:sidebar.item icon="shield-check" :href="route('admin.gdpr.dashboard')" :current="request()->routeIs('admin.gdpr*')" wire:navigate>
+                            {{ __('GDPR Compliance') }}
+                        </flux:sidebar.item>
                     @endcan
-                    <flux:sidebar.item icon="user-circle" :href="route('gdpr.export.form')" :current="request()->routeIs('gdpr.export.form')" wire:navigate>
+                    @can('viewPulse')
+                        <flux:sidebar.item icon="chart-bar" :href="route('pulse')" :current="request()->routeIs('pulse')" wire:navigate>
+                            {{ __('Pulse') }}
+                        </flux:sidebar.item>
+                    @endcan
+                </flux:sidebar.group>
+
+                {{-- My Account --}}
+                <flux:sidebar.group :heading="__('My Account')">
+                    <flux:sidebar.item icon="arrow-down-tray" :href="route('gdpr.export.form')" :current="request()->routeIs('gdpr.export*')" wire:navigate>
                         {{ __('Request My Data') }}
                     </flux:sidebar.item>
-                    <flux:spacer />
-            </flux:sidebar.group>
+                    <flux:sidebar.item icon="cog-6-tooth" :href="route('profile.edit')" :current="request()->routeIs('profile.edit', 'appearance.edit', 'security.edit')" wire:navigate>
+                        {{ __('Settings') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
             </flux:sidebar.nav>
-
-
 
             <flux:spacer />
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
-        <!-- Mobile User Menu -->
+        <!-- Mobile Menu -->
         <flux:header class="lg:hidden">
-            
+
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-            
+
             <flux:spacer />
             <livewire:notifications-dropdown />
             <flux:dropdown position="top" align="end">
-                
+
                 <flux:profile
                     :initials="auth()->user()->initials()"
                     icon-trailing="chevron-down"
                 />
-                 
+
                 <flux:menu>
                     <flux:menu.radio.group>
                         <div class="p-0 text-sm font-normal">
@@ -82,7 +105,7 @@
                             </div>
                         </div>
                     </flux:menu.radio.group>
-                    
+
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
