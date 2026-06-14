@@ -123,6 +123,30 @@ new class extends Component {
         if ($this->view === 'table' && count($this->deals) > $this->perPage) {
             array_pop($this->deals);
         }
+
+        // Update cache with the new deal without invalidating it
+        $this->updateCacheWithNewDeal($rawDeal);
+    }
+
+    /**
+     * Update cache by appending the new deal (no full invalidation).
+     */
+    private function updateCacheWithNewDeal(array $newDeal): void
+    {
+        $key = $this->filterCacheKey('deals');
+        $cached = Cache::get($key);
+
+        if ($cached) {
+            $cached['deals'] = array_values(array_filter($cached['deals'], fn($d) => $d['id'] !== $newDeal['id']));
+            array_unshift($cached['deals'], $newDeal);
+            $cached['total']++;
+
+            if ($this->view === 'table' && count($cached['deals']) > $this->perPage) {
+                array_pop($cached['deals']);
+            }
+
+            Cache::put($key, $cached, now()->addMinutes(15));
+        }
     }
 
     private function onFilterChanged(): void
@@ -201,15 +225,38 @@ new class extends Component {
             $this->isDefaultDateRange = true;
         }
 
-        $this->loadDeals();
+        // Restore from cache if available — makes returning to the page instant
+        $cacheKey = $this->filterCacheKey('deals');
+        $cached = Cache::get($cacheKey);
 
-        // Auto-widen: if default month filter returns < 100 results, show all-time.
-        // Only do this once — skip the double-query if we already have 30+ records.
-        if ($this->isDefaultDateRange && $this->getTotalResultCount() < 30) {
-            $this->dateFrom = null;
-            $this->isDefaultDateRange = false;
+        if ($cached) {
+            $this->deals = $cached['deals'] ?? [];
+            $this->totalDeals = $cached['total'] ?? 0;
+        } else {
             $this->loadDeals();
+
+            // Auto-widen: if default month filter returns < 30 results, show all-time.
+            // Only do this on a fresh load (cache miss), not on return visits.
+            if ($this->isDefaultDateRange && $this->getTotalResultCount() < 30) {
+                $this->dateFrom = null;
+                $this->isDefaultDateRange = false;
+                $this->loadDeals();
+            }
         }
+    }
+
+    /**
+     * Cache the current deals snapshot so returning to the page is instant.
+     * Extended TTL (15 min) for better persistence when navigating between modules.
+     */
+    private function cacheDeals(): void
+    {
+        $key = $this->filterCacheKey('deals');
+
+        Cache::put($key, [
+            'deals' => $this->deals,
+            'total' => $this->view === 'table' ? $this->totalDeals : count($this->deals),
+        ], now()->addMinutes(15));
     }
 
     private function persistState(): void
@@ -301,7 +348,17 @@ new class extends Component {
      */
     private function buildQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        // Select only the columns the UI actually uses (avoids fetching 40+ columns)
+        $dealColumns = [
+            'id', 'name', 'amount', 'stage', 'user_id',
+            'recruitment_agency', 'consultant_name', 'agency_deal_value', 'margin_agreed',
+            'date_sent', 'date_signed', 'who_signed', 'right_to_work',
+            'mda_reference_number', 'date_set_up', 'tax_code',
+            'created_at', 'updated_at',
+        ];
+
         $query = Deal::query()
+            ->select($dealColumns)
             ->with([
                 'contacts:id,first_name,last_name',
                 'companies:id,name,email,phone,domain',
@@ -365,11 +422,49 @@ new class extends Component {
     {
         $query = $this->buildQuery();
 
+        // Build array with only needed fields (avoids toArray() which includes all 40+ columns)
         $mapper = function ($deal) {
-            $arr = $deal->toArray();
-            $arr['stage'] = $deal->stage instanceof \BackedEnum ? $deal->stage->value : (string) $deal->stage;
-
-            return $arr;
+            return [
+                'id' => $deal->id,
+                'name' => $deal->name,
+                'amount' => $deal->amount,
+                'stage' => $deal->stage instanceof \BackedEnum ? $deal->stage->value : (string) $deal->stage,
+                'user_id' => $deal->user_id,
+                'recruitment_agency' => $deal->recruitment_agency,
+                'consultant_name' => $deal->consultant_name,
+                'agency_deal_value' => $deal->agency_deal_value,
+                'margin_agreed' => $deal->margin_agreed,
+                'date_sent' => $deal->date_sent, // date columns stored as strings
+                'date_signed' => $deal->date_signed,
+                'who_signed' => $deal->who_signed,
+                'right_to_work' => $deal->right_to_work,
+                'mda_reference_number' => $deal->mda_reference_number,
+                'date_set_up' => $deal->date_set_up,
+                'tax_code' => $deal->tax_code,
+                'created_at' => $deal->created_at?->toIso8601String(),
+                'updated_at' => $deal->updated_at?->toIso8601String(),
+                'user' => $deal->relationLoaded('user') ? [
+                    'id' => $deal->user->id,
+                    'name' => $deal->user->name,
+                    'email' => $deal->user->email,
+                ] : null,
+                'contacts' => $deal->relationLoaded('contacts')
+                    ? $deal->contacts->map(fn($c) => [
+                        'id' => $c->id,
+                        'first_name' => $c->first_name,
+                        'last_name' => $c->last_name,
+                    ])->all()
+                    : [],
+                'companies' => $deal->relationLoaded('companies')
+                    ? $deal->companies->map(fn($c) => [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'email' => $c->email,
+                        'phone' => $c->phone,
+                        'domain' => $c->domain,
+                    ])->all()
+                    : [],
+            ];
         };
 
         if ($this->view === 'table') {
@@ -404,6 +499,8 @@ new class extends Component {
                 ->map($mapper)
                 ->toArray();
         }
+
+        $this->cacheDeals();
     }
 
     public function refreshDeals(): void
@@ -525,7 +622,31 @@ new class extends Component {
         }
         unset($existingDeal);
 
+        // ── Update cache (no invalidation) ──
+        $this->updateCacheWithDealUpdate($dealId, ['stage' => $newStage]);
+
         $this->dispatch('success', message: 'Deal moved successfully');
+    }
+
+    /**
+     * Update a specific deal in cache (no full invalidation).
+     */
+    private function updateCacheWithDealUpdate(int $dealId, array $updates): void
+    {
+        $key = $this->filterCacheKey('deals');
+        $cached = Cache::get($key);
+
+        if ($cached) {
+            foreach ($cached['deals'] as &$cachedDeal) {
+                if ($cachedDeal['id'] == $dealId) {
+                    $cachedDeal = array_merge($cachedDeal, $updates);
+                    break;
+                }
+            }
+            unset($cachedDeal);
+
+            Cache::put($key, $cached, now()->addMinutes(15));
+        }
     }
 
     // ─── BATCH OPERATIONS ───
