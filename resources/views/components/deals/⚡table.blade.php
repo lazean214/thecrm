@@ -1193,6 +1193,7 @@ new class extends Component {
             @include('components.deals.partials.⚡table-view', [
                 'stageConfig' => $stageConfig,
                 'deals' => $this->dealsForTable,
+                'tableLoading' => $this->tableLoading,
             ])
         </div>
     @endif
