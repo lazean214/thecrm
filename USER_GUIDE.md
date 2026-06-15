@@ -21,7 +21,7 @@ A comprehensive guide to using the CRM system for managing deals, workers, and c
 
 ---
 
-## Getting Started
+## <span id="getting-started">Getting Started</span>
 
 ### Accessing the CRM
 
@@ -39,7 +39,7 @@ Access the CRM by navigating to your application URL. You'll see the main naviga
 
 ---
 
-## Dashboard
+## <span id="dashboard">Dashboard</span>
 
 The dashboard provides a high-level view of your sales pipeline:
 
@@ -49,7 +49,7 @@ The dashboard provides a high-level view of your sales pipeline:
 
 ---
 
-## Deals Management
+## <span id="deals-management">Deals Management</span>
 
 ### Creating a Deal
 
@@ -100,7 +100,7 @@ Deals move through these stages:
 
 ---
 
-## Pipeline (Kanban Board)
+## <span id="pipeline-kanban-board">Pipeline (Kanban Board)</span>
 
 The Kanban board provides a visual overview of your pipeline.
 
@@ -130,7 +130,7 @@ Each deal card displays:
 
 ---
 
-## Deal Details
+## <span id="deal-details">Deal Details</span>
 
 ### Opening a Deal
 
@@ -187,7 +187,7 @@ Click on any deal card to view its full details.
 
 ---
 
-## Contacts
+## <span id="contacts">Contacts</span>
 
 Manage worker and contractor contacts.
 
@@ -217,7 +217,7 @@ Manage worker and contractor contacts.
 
 ---
 
-## Companies
+## <span id="companies">Companies</span>
 
 Manage recruitment agencies and umbrella companies.
 
@@ -245,7 +245,7 @@ Manage recruitment agencies and umbrella companies.
 
 ---
 
-## Users & Teams
+## <span id="users--teams">Users & Teams</span>
 
 ### User Roles
 
@@ -270,7 +270,7 @@ Manage recruitment agencies and umbrella companies.
 
 ---
 
-## Envelopes & Signatures
+## <span id="envelopes--signatures">Envelopes & Signatures</span>
 
 ### Document Signing
 
@@ -294,7 +294,7 @@ Send documents for electronic signature using Signable integration.
 
 ---
 
-## Email Templates
+## <span id="email-templates">Email Templates</span>
 
 ### Email Designer
 
@@ -317,7 +317,7 @@ Create reusable email templates for worker communications.
 
 ---
 
-## GDPR Compliance
+## <span id="gdpr-compliance">GDPR Compliance</span>
 
 ### GDPR Dashboard
 
@@ -337,7 +337,7 @@ Admin users can access compliance tools.
 
 ---
 
-## Notifications
+## <span id="notifications">Notifications</span>
 
 ### In-App Notifications
 
