@@ -1174,6 +1174,8 @@ new class extends Component {
             @include('components.deals.partials.⚡kanban', [
                 'stageConfig' => $stageConfig,
                 'kanbanData' => $this->kanbanData,
+                'isSalesUser' => $this->isSalesTeam(),
+                'editableStages' => $this->getEditableStages(),
             ])
         </div>
     @endif

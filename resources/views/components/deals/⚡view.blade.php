@@ -229,8 +229,9 @@ new class extends Component {
         $reason = $user->isSalesTeam() ? 'Sales Team action' : ($user->isComplianceTeam() ? 'Compliance Team action' : 'System action');
         $this->deals->logStageChange($oldStage, $stage, $reason);
 
+        // Update the local property without expensive refresh - use deferred update
         $this->stage = $stage;
-        $this->deals->refresh();
+        $this->deals->stage = $stage;
 
         $this->dispatch('notify', type: 'success', message: 'Deal stage updated.');
     }

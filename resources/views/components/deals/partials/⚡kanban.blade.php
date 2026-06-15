@@ -1,10 +1,9 @@
 {{-- components/deals/partials/⚡kanban.blade.php --}}
 
 @php
-    $isSalesUser = $this->isSalesTeam();
-    $editableStages = $this->getEditableStages();
-    // Debug: log data shape
-    // logger('kanbanData', json_encode($kanbanData));
+    // These are passed from the parent Livewire component
+    $isSalesUser = $isSalesUser ?? false;
+    $editableStages = $editableStages ?? [];
 @endphp
 
 <div x-data="kanbanBoard({
@@ -38,7 +37,7 @@
                 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30': dragOverStage !== stage
             }"
             @dragover.prevent="canEditStage(stage) && onDragOver(stage)" @dragleave="onDragLeave()" @dragenter.prevent
-            @drop.prevent="canEditStage(stage) && onDrop(stage)">
+            @drop.prevent="onDrop(stage)">
 
             {{-- Header --}}
             <div class="px-4 py-3 rounded-t-2xl font-semibold flex items-center justify-between sticky top-0 z-10 shadow-sm"
@@ -78,8 +77,8 @@
 
                 <template x-for="deal in getDealsByStage(stage)" :key="deal.id">
                     <div :data-deal-id="deal.id" class="transition-transform duration-200"
-                        :draggable="canEditStage(stage) ? 'true' : 'false'"
-                        @dragstart="canEditStage(stage) && onDragStart(deal.id, stage, $event)" @dragend="resetDrag()">
+                        :draggable="canEditStage(stage)"
+                        @dragstart="onDragStart(deal.id, stage, $event)" @dragend="onDragEnd()">
 
                         {{-- Card --}}
                         <div class="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
@@ -262,7 +261,6 @@
                 // Watch for Livewire updates
                 this.$watch('$wire.kanbanData', (serverData) => {
                     if (serverData && Object.keys(serverData).length > 0) {
-                        // Merge with current state
                         this.syncWithServer(serverData);
                     }
                 });
@@ -295,11 +293,13 @@
                 // Add to correct stage
                 const stage = newDeal.stage;
                 if (!this.kanbanData[stage]) {
-                    this.kanbanData[stage] = [];
+                    this.kanbanData[stage] = { deals: [], count: 0, total_amount: 0 };
                 }
 
-                if (!this.kanbanData[stage].some(d => d.id === newDeal.id)) {
-                    this.kanbanData[stage].unshift(newDeal);
+                const stageData = this.kanbanData[stage];
+                if (!stageData.deals.some(d => d.id === newDeal.id)) {
+                    stageData.deals.unshift(newDeal);
+                    stageData.count = (stageData.count || 0) + 1;
                     this.saveState();
                 }
             },
@@ -341,6 +341,10 @@
             },
 
             onDragStart(dealId, stage, event) {
+                if (!this.canEditStage(stage)) {
+                    event.preventDefault();
+                    return;
+                }
                 this.draggingId = dealId;
                 this.draggingStage = stage;
                 event.dataTransfer.effectAllowed = 'move';
@@ -357,14 +361,16 @@
 
             async onDrop(targetStage) {
                 this.dragOverStage = null;
-                if (!this.draggingId || this.draggingStage === targetStage) {
-                    this.resetDrag();
-                    return;
-                }
 
                 const dealId = this.draggingId;
                 const fromStage = this.draggingStage;
-                this.resetDrag();
+
+                if (!dealId || fromStage === targetStage) {
+                    this.onDragEnd();
+                    return;
+                }
+
+                this.onDragEnd();
 
                 // Find the deal
                 const deal = this.findDeal(dealId);
@@ -384,15 +390,21 @@
 
             findDeal(dealId) {
                 for (const stage of this.stages) {
-                    const deal = (this.kanbanData[stage] || []).find(d => d.id === dealId);
+                    const stageData = this.kanbanData[stage];
+                    if (!stageData || !stageData.deals) continue;
+                    const deal = stageData.deals.find(d => d.id === dealId);
                     if (deal) return deal;
                 }
                 return null;
             },
 
             moveDealLocally(dealId, fromStage, toStage) {
-                const fromDeals = this.kanbanData[fromStage] || [];
-                const toDeals = this.kanbanData[toStage] || [];
+                const fromData = this.kanbanData[fromStage];
+                const toData = this.kanbanData[toStage];
+                if (!fromData?.deals || !toData?.deals) return;
+
+                const fromDeals = fromData.deals;
+                const toDeals = toData.deals;
 
                 const dealIndex = fromDeals.findIndex(d => d.id === dealId);
                 if (dealIndex === -1) return;
@@ -401,8 +413,15 @@
                 deal.stage = toStage;
                 toDeals.unshift(deal);
 
-                this.kanbanData[fromStage] = fromDeals;
-                this.kanbanData[toStage] = toDeals;
+                // Update counts
+                fromData.count = (fromData.count || 0) - 1;
+                toData.count = (toData.count || 0) + 1;
+
+                // Update totals if amount is available
+                if (deal.amount) {
+                    fromData.total_amount = (fromData.total_amount || 0) - deal.amount;
+                    toData.total_amount = (toData.total_amount || 0) + deal.amount;
+                }
 
                 this.saveState();
             },
@@ -418,9 +437,10 @@
                 }
             },
 
-            resetDrag() {
+            onDragEnd() {
                 this.draggingId = null;
                 this.draggingStage = null;
+                this.dragOverStage = null;
             },
         };
     }

@@ -56,7 +56,7 @@ class DealObserver
                 ? $newStage->value
                 : $newStage;
 
-            // Get compliance team users (matching the actual team name)
+            // Get compliance team users
             $complianceUsers = User::whereHas('teams', function ($query) {
                 $query->where('name', 'Compliance Team');
             })->get();

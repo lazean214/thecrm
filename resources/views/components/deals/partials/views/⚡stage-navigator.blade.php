@@ -41,7 +41,7 @@ new class extends Component
                         wire:target="setStage"
                         @if (! $canMove && ! $isActive) disabled title="Your team cannot move deals to this stage" @endif
                         class="group relative w-full rounded-xl border transition-all duration-300 px-4 py-3 text-left overflow-hidden
-                            {{ ! $canMove && ! $isActive ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            {{ $isActive ? 'cursor-default' : ($canMove ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md' : 'opacity-50 cursor-not-allowed') }}"
                         @style([
                             'background-color: '.$cfg['accent'].'15; border-color: '.$cfg['accent'].'50' => $isActive,
                             'background-color:#dcfce7; border-color:#22c55e' => $isCompleted && $canMove,
