@@ -64,7 +64,7 @@ The dashboard provides a high-level view of your sales pipeline:
 ### Deal Fields
 
 | Field | Description |
-| --- | --- |
+|-------|-------------|
 | Name | Worker's full name |
 | Amount | Total deal value |
 | TSV (Total Stage Value) | Amount at current stage |
@@ -79,7 +79,7 @@ The dashboard provides a high-level view of your sales pipeline:
 Deals move through these stages:
 
 | Stage | Description |
-| --- | --- |
+|-------|-------------|
 | 📄 Doc Sent | Contract/documentation sent to worker |
 | ✍️ Doc Signed | Contract signed by worker |
 | ✅ Compliant | All compliance checks passed |
@@ -94,7 +94,7 @@ Deals move through these stages:
 ### Stage Permissions
 
 | Role | Can Move To |
-| --- | --- |
+|------|-------------|
 | Sales Team | Doc Sent → Doc Signed → Compliant |
 | Compliance Team | Any stage |
 
@@ -194,7 +194,7 @@ Manage worker and contractor contacts.
 ### Fields
 
 | Field | Description |
-| --- | --- |
+|-------|-------------|
 | First Name | Contact's first name |
 | Last Name | Contact's last name |
 | Email | Email address |
@@ -231,7 +231,7 @@ Manage recruitment agencies and umbrella companies.
 ### Company Fields
 
 | Field | Description |
-| --- | --- |
+|-------|-------------|
 | Name | Company name |
 | Address | Company address |
 | Contacts | Associated contacts |
@@ -250,7 +250,7 @@ Manage recruitment agencies and umbrella companies.
 ### User Roles
 
 | Role | Description |
-| --- | --- |
+|------|-------------|
 | Admin | Full system access |
 | Sales Team | Can manage their own deals |
 | Compliance Team | Can manage compliance stages |
@@ -303,7 +303,7 @@ Create reusable email templates for worker communications.
 ### Template Fields
 
 | Field | Description |
-| --- | --- |
+|-------|-------------|
 | Name | Template name |
 | Subject | Email subject line |
 | Content | Email body (HTML supported) |

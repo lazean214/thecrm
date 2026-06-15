@@ -61,6 +61,9 @@
 
                 {{-- My Account --}}
                 <flux:sidebar.group :heading="__('My Account')">
+                    <flux:sidebar.item icon="question-mark-circle" :href="route('help')" :current="request()->routeIs('help')" wire:navigate>
+                        {{ __('User Guide') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="arrow-down-tray" :href="route('gdpr.export.form')" :current="request()->routeIs('gdpr.export*')" wire:navigate>
                         {{ __('Request My Data') }}
                     </flux:sidebar.item>

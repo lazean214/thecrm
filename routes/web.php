@@ -13,6 +13,7 @@ Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::view('help', 'help')->name('help');
     Route::view('deals', 'deals.deals')->name('deals');
     Route::get('deals/export', [DealExportController::class, 'export'])->name('deals.export');
     Route::get('deals/{deal}', [DealController::class, 'show'])->name('deals.show');
