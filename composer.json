@@ -20,7 +20,8 @@
         "livewire/livewire": "^4.1",
         "maatwebsite/excel": "^3.1",
         "nwidart/laravel-modules": "*",
-        "spatie/laravel-medialibrary": "*"
+        "spatie/laravel-medialibrary": "*",
+        "spatie/laravel-permission": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

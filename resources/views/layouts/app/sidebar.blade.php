@@ -39,6 +39,7 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
+                @can('view-users')
                 {{-- Administration --}}
                 <flux:sidebar.group :heading="__('Administration')">
                     <flux:sidebar.item icon="user-circle" :href="route('users')" :current="request()->routeIs('users*')" wire:navigate>
@@ -46,6 +47,12 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="rectangle-group" :href="route('teams')" :current="request()->routeIs('teams*')" wire:navigate>
                         {{ __('Teams') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="lock-closed" :href="route('roles')" :current="request()->routeIs('roles*')" wire:navigate>
+                        {{ __('Roles') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="lock-open" :href="route('permissions')" :current="request()->routeIs('permissions*')" wire:navigate>
+                        {{ __('Permissions') }}
                     </flux:sidebar.item>
                     @can('manage-gdpr')
                         <flux:sidebar.item icon="shield-check" :href="route('admin.gdpr.dashboard')" :current="request()->routeIs('admin.gdpr*')" wire:navigate>
@@ -58,6 +65,7 @@
                         </flux:sidebar.item>
                     @endcan
                 </flux:sidebar.group>
+                @endcan
 
                 {{-- My Account --}}
                 <flux:sidebar.group :heading="__('My Account')">

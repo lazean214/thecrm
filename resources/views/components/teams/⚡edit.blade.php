@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Models\Team;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 new class extends Component
 {
@@ -10,7 +11,9 @@ new class extends Component
     public $name = '';
     public $description = '';
     public $selectedUsers = [];
+    public $selectedRoles = [];
     public $users = [];
+    public $roles = [];
     public $showModal = false;
 
     // Listen for the editTeam event dispatched from the index file
@@ -20,6 +23,7 @@ new class extends Component
     {
         // Cache available users once to populate the member list
         $this->users = User::orderBy('name')->get();
+        $this->roles = Role::orderBy('name')->get();
     }
 
     protected function rules()
@@ -28,18 +32,22 @@ new class extends Component
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
             'selectedUsers' => 'nullable|array',
+            'selectedRoles' => 'nullable|array',
         ];
     }
 
     public function editTeam($teamId)
     {
-        $this->team = Team::with('users')->findOrFail($teamId);
+        $this->team = Team::with('users.roles')->findOrFail($teamId);
         $this->name = $this->team->name;
         $this->description = $this->team->description;
-        
+
         // Pluck the IDs of all current members assigned to this team
         $this->selectedUsers = $this->team->users->pluck('id')->toArray();
-        
+
+        // Get unique roles from all team members
+        $this->selectedRoles = $this->team->users->flatMap->roles->pluck('id')->unique()->toArray();
+
         $this->showModal = true;
     }
 
@@ -55,18 +63,26 @@ new class extends Component
         // Sync the chosen members to the pivot relationship
         $this->team->users()->sync($this->selectedUsers);
 
+        // Update roles for all team members
+        if (!empty($this->selectedRoles)) {
+            $roles = Role::whereIn('id', $this->selectedRoles)->get();
+            foreach ($this->team->users as $user) {
+                $user->syncRoles($roles);
+            }
+        }
+
         $this->showModal = false;
-        
+
         // Dispatch the refresh event to notify the main list
         $this->dispatch('teamUpdated');
-        
+
         session()->flash('message', 'Team updated successfully.');
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['name', 'description', 'selectedUsers']);
+        $this->reset(['name', 'description', 'selectedUsers', 'selectedRoles']);
     }
 };
 ?>
@@ -102,12 +118,23 @@ new class extends Component
                                         <input type="text" wire:model="name" class="w-full rounded-xl border border-zinc-300 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
                                         @error('name') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                     </div>
-                                    
+
                                     {{-- Description --}}
                                     <div>
                                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Description</label>
-                                        <textarea wire:model="description" rows="3" class="w-full rounded-xl border border-zinc-300 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                        <textarea wire:model="description" rows="2" class="w-full rounded-xl border border-zinc-300 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                                         @error('description') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    {{-- Roles Selection --}}
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Team Roles</label>
+                                        <select wire:model="selectedRoles" multiple class="w-full rounded-xl border border-zinc-300 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+                                            @foreach($roles as $role)
+                                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-zinc-500 mt-1">These roles will be assigned to all team members</p>
                                     </div>
 
                                     {{-- Members Selection --}}

@@ -26,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('designer/{email}', 'email.edit')->name('designer.edit');
     Route::view('teams', 'team')->name('teams');
     Route::view('users', 'user')->name('users');
+    Route::view('roles', 'roles')->name('roles');
+    Route::view('permissions', 'permissions')->name('permissions');
 });
 
 require __DIR__.'/settings.php';

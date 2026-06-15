@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Models\User;
 use App\Models\Team;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
 new class extends Component
@@ -13,7 +14,9 @@ new class extends Component
     public $password = '';
     public $password_confirmation = '';
     public $selectedTeams = [];
+    public $selectedRoles = [];
     public $teams = [];
+    public $roles = [];
     public $showModal = false;
 
     protected $listeners = ['editUser'];
@@ -21,6 +24,7 @@ new class extends Component
     public function mount()
     {
         $this->teams = Team::orderBy('name')->get();
+        $this->roles = Role::orderBy('name')->get();
     }
 
     protected function rules()
@@ -29,6 +33,7 @@ new class extends Component
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . ($this->user?->id ?? 'NULL'),
             'selectedTeams' => 'required|array|min:1',
+            'selectedRoles' => 'nullable|array',
             'password' => $this->password ? 'nullable|min:8|confirmed' : 'nullable',
         ];
     }
@@ -38,13 +43,14 @@ new class extends Component
         $this->user = User::findOrFail($userId);
         $this->name = $this->user->name;
         $this->email = $this->user->email;
-        
+
         $this->selectedTeams = $this->user->teams->pluck('id')->toArray();
-        
+        $this->selectedRoles = $this->user->roles->pluck('id')->toArray();
+
         // Reset password fields on fresh load
         $this->password = '';
         $this->password_confirmation = '';
-        
+
         $this->showModal = true;
     }
 
@@ -63,17 +69,18 @@ new class extends Component
 
         $this->user->update($updateData);
         $this->user->teams()->sync($this->selectedTeams);
+        $this->user->syncRoles($this->selectedRoles);
 
         $this->showModal = false;
         $this->dispatch('userUpdated');
-        
+
         session()->flash('message', 'User updated successfully.');
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['name', 'email', 'selectedTeams', 'password', 'password_confirmation']);
+        $this->reset(['name', 'email', 'selectedTeams', 'selectedRoles', 'password', 'password_confirmation']);
     }
 };
 ?>
@@ -115,6 +122,17 @@ new class extends Component
                                         <label class="block text-sm font-medium mb-1">Email</label>
                                         <input type="email" wire:model="email" class="w-full rounded-xl border border-zinc-300 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
                                         @error('email') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    {{-- Role Selection --}}
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Assign Roles</label>
+                                        <select wire:model="selectedRoles" multiple class="w-full rounded-xl border border-zinc-300 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+                                            @foreach($roles as $role)
+                                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-zinc-500 mt-1">Hold CTRL / CMD to select multiple roles</p>
                                     </div>
 
                                     {{-- Team Selection --}}
