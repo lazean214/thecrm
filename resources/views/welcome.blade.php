@@ -53,20 +53,20 @@
 
                     <!-- Session Status -->
                     @if (session('status'))
-                        <flux:callout variant="success" icon="check-circle">
+                        <flux:badge color="green" icon="check-circle">
                             {{ session('status') }}
-                        </flux:callout>
+                        </flux:badge>
                     @endif
 
                     <!-- Validation Errors -->
                     @if ($errors->any())
-                        <flux:callout variant="danger" icon="exclamation-circle">
+                        <flux:badge color="red" icon="exclamation-circle">
                             <ul class="list-disc list-inside text-sm">
                                 @foreach ($errors->all() as $error)
                                     <li>{{ $error }}</li>
                                 @endforeach
                             </ul>
-                        </flux:callout>
+                        </flux:badge>
                     @endif
 
                     <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">

@@ -149,7 +149,7 @@
                         </div>
                     @else
                         @error('setupData')
-                            <flux:callout variant="danger" icon="x-circle" heading="{{ $message }}"/>
+                            <flux:badge color="red" icon="x-circle">{{ $message }}</flux:badge>
                         @enderror
 
                         <div class="flex justify-center">

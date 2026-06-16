@@ -60,7 +60,7 @@
         >
             <div class="mt-3 space-y-3">
                 @error('recoveryCodes')
-                    <flux:callout variant="danger" icon="x-circle" heading="{{$message}}"/>
+                    <flux:badge color="red" icon="x-circle">{{ $message }}</flux:badge>
                 @enderror
 
                 @if (filled($recoveryCodes))

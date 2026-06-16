@@ -10,8 +10,9 @@
                 <flux:subheading class="mb-6">Request a copy of your personal data</flux:subheading>
 
                 @if (session('status'))
-                    <flux:callout variant="success" heading="Export Requested" class="mb-6">
-                        {{ session('status') }}
+                    <div class="mb-6 p-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                        <flux:heading size="sm" class="!text-green-800 dark:!text-green-200 mb-2">Export Requested</flux:heading>
+                        <p class="text-sm text-green-700 dark:text-green-300">{{ session('status') }}</p>
 
                         @if (session('export_token'))
                             <div class="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
@@ -22,7 +23,7 @@
                                 </flux:button>
                             </div>
                         @endif
-                    </flux:callout>
+                    </div>
                 @endif
 
                 <div class="text-left space-y-4 mb-8">
