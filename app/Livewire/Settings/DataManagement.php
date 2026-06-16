@@ -5,6 +5,7 @@ namespace App\Livewire\Settings;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Deal;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -16,6 +17,7 @@ class DataManagement extends Component
 
     public function mount(): void
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         $this->loadCounts();
     }
 
