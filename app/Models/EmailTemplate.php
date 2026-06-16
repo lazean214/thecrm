@@ -19,6 +19,7 @@ class EmailTemplate extends Model implements HasMedia
         'sections',
         'description',
         'is_active',
+        'internal_company',
         'created_by',
     ];
 

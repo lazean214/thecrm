@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\InternalCompany;
 use App\Models\EmailTemplate;
 use App\Models\EmailTemplateAttachment;
 use App\Services\EmailTemplateParser;
@@ -38,6 +39,8 @@ new class extends Component
 
     public $savedAttachments = [];
 
+    public ?string $internalCompany = null;
+
     public array $tokens = [
         'Deal' => [
             '[deal.name]',
@@ -61,6 +64,16 @@ new class extends Component
         ],
     ];
 
+    public static function getEmailTemplateView(?string $companySlug): string
+    {
+        return match ($companySlug) {
+            'umbrella-company' => 'email.umbrellacompany-uk',
+            'churchill-knight-umbrella' => 'email.churchill-knight-umbrella',
+            'churchill-knight-associates' => 'email.churchill-knight-associates',
+            default => 'email.simple-template',
+        };
+    }
+
     public function mount(?int $templateId = null): void
     {
         if (! $templateId) {
@@ -79,6 +92,7 @@ new class extends Component
             'is_active' => (bool) $this->template->is_active,
             'editorMode' => $this->template->editor_mode ?? 'legacy',
             'sections' => $this->template->sections ?? [],
+            'internalCompany' => $this->template->internal_company ?? null,
         ]);
 
         if (! empty($this->sections)) {
@@ -283,6 +297,7 @@ new class extends Component
             'created_by' => Auth::id(),
             'editor_mode' => $this->editorMode,
             'sections' => $this->editorMode === 'builder' ? $this->sections : null,
+            'internal_company' => $this->internalCompany,
         ];
 
         $template = EmailTemplate::updateOrCreate(
@@ -421,7 +436,7 @@ new class extends Component
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">
                             Template Name
@@ -433,6 +448,20 @@ new class extends Component
                         @error('name')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Internal Company
+                        </label>
+                        <select
+                            wire:model="internalCompany"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-emerald-500 focus:outline-none">
+                            <option value="">-- None --</option>
+                            <option value="umbrella-company">Umbrella Company UK</option>
+                            <option value="churchill-knight-umbrella">Churchill Knight Umbrella</option>
+                            <option value="churchill-knight-associates">Churchill Knight Associates</option>
+                        </select>
                     </div>
 
                     <div class="flex items-end justify-between gap-4">

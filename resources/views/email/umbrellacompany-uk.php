@@ -164,8 +164,7 @@
                         <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td class="content-block">
-                                    <img src="{{ config('app.url') }}/assets/email/churchill-knight-umbrella-logo.png"
-                                        alt="Churchill Knight Umbrella" width="140"
+                                    <img src="{{ config('app.url') }}/assets/email/umbrella-company-uk-logo.png" alt="Umbrella Company UK" width="140"
                                         style="outline: none; border: none; max-width: 100%;">
                                 </td>
                             </tr>
