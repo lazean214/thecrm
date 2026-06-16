@@ -47,6 +47,14 @@ class FortifyServiceProvider extends ServiceProvider
 
             return false;
         });
+
+        // Disable registration for guests - only administrators can register new users
+        Fortify::registerView(function () {
+            if (auth()->check() && auth()->user()->isAdmin()) {
+                return view('livewire.auth.register');
+            }
+            abort(403, 'Registration is disabled.');
+        });
     }
 
     /**

@@ -1,59 +1,120 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>{{ __('Welcome') }} - {{ config('app.name', 'Laravel') }}</title>
-
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    @fonts
-    @vite('resources/css/app.css')
-
+    @include('partials.head')
+    @fluxScripts
 </head>
 
-<body
-    class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-    <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
-        @if (Route::has('login'))
-            <nav class="flex items-center justify-end gap-4">
-                @auth
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('login') }}"
-                        class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal">
-                        Log in
-                    </a>
-
-
-                @endauth
-            </nav>
-        @endif
-    </header>
-    <div
-        class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-        <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
-            <div
-                class="text-[13px] leading-5 flex-1 p-6 pb-12 lg:p-20 bg-white dark:bg-[#161615] dark:text-[#EDEDEC] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d] rounded-es-lg rounded-ee-lg lg:rounded-ss-lg lg:rounded-ee-none">
-                <h1 class="mb-1 font-medium">Let's get started</h1>
-                <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">Welcome to CRM</p>
-
-
+<body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
+    <div class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:grid-cols-2 lg:px-0">
+        <!-- Left Panel - Branding -->
+        <div
+            class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-e dark:border-neutral-800">
+            <div class="absolute inset-0 bg-neutral-900 text-white opacity-75"
+                style="background-image: url('https://img.magnific.com/free-vector/gradient-metaverse-illustration_23-2149265633.jpg'); background-size: cover; background-position: center;">
             </div>
+            <a href="{{ route('home') }}" class="relative z-20 flex items-center text-lg font-medium" wire:navigate>
+                <span class="flex  w-24 items-center justify-center rounded-md">
+                    <x-app-logo-icon class="me-2 h-7 fill-current text-white" />
+                </span>
 
-        </main>
+            </a>
+
+            @php
+                [$message, $author] = str(Illuminate\Foundation\Inspiring::quotes()->random())->explode('-');
+            @endphp
+
+            <div class="relative z-20 mt-auto">
+                <blockquote class="space-y-2">
+                    <flux:heading size="lg">&ldquo;{{ trim($message) }}&rdquo;</flux:heading>
+                    <footer>
+                        <flux:heading>{{ trim($author) }}</flux:heading>
+                    </footer>
+                </blockquote>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="w-full lg:p-8">
+            <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-87.5">
+                <a href="{{ route('home') }}" class="z-20 flex flex-col items-center gap-2 font-medium lg:hidden"
+                    wire:navigate>
+                    <span class="flex h-9 w-9 items-center justify-center rounded-md">
+                        <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
+                    </span>
+                    <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+                </a>
+
+                <!-- Login Form -->
+                <div class="flex flex-col gap-6">
+                    <flux:heading size="lg">Welcome Back</flux:heading>
+                    <flux:text variant="muted">Sign in to your account to continue</flux:text>
+
+                    <!-- Session Status -->
+                    @if (session('status'))
+                        <flux:callout variant="success" icon="check-circle">
+                            {{ session('status') }}
+                        </flux:callout>
+                    @endif
+
+                    <!-- Validation Errors -->
+                    @if ($errors->any())
+                        <flux:callout variant="danger" icon="exclamation-circle">
+                            <ul class="list-disc list-inside text-sm">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </flux:callout>
+                    @endif
+
+                    <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
+                        @csrf
+
+                        <!-- Email Address -->
+                        <flux:field>
+                            <flux:label>Email address</flux:label>
+                            <flux:input name="email" type="email" :value="old('email')" required autofocus
+                                autocomplete="email" placeholder="email@example.com" />
+                        </flux:field>
+
+                        <!-- Password -->
+                        <flux:field>
+                            <flux:label>Password</flux:label>
+                            <flux:input name="password" type="password" required autocomplete="current-password"
+                                placeholder="Password" viewable />
+                            @if (Route::has('password.request'))
+                                <flux:link class="mt-1" :href="route('password.request')" wire:navigate>
+                                    Forgot your password?
+                                </flux:link>
+                            @endif
+                        </flux:field>
+
+                        <!-- Remember Me -->
+                        <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+
+                        <flux:button variant="primary" type="submit" class="w-full">
+                            {{ __('Log in') }}
+                        </flux:button>
+                    </form>
+
+                    @if (Route::has('register') && auth()->check() && auth()->user()->isAdmin())
+                        <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
+                            <span>Don't have an account?</span>
+                            <flux:link :href="route('register')" wire:navigate>Sign up</flux:link>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
-    @if (Route::has('login'))
-        <div class="h-14.5 hidden lg:block"></div>
-    @endif
+    @persist('toast')
+        <flux:toast.group>
+            <flux:toast />
+        </flux:toast.group>
+    @endpersist
 </body>
 
 </html>
