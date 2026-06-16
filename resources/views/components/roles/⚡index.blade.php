@@ -6,8 +6,8 @@ use Spatie\Permission\Models\Permission;
 
 new class extends Component
 {
-    public $roles = [];
-    public $permissions = [];
+    public array $roles = [];
+    public array $permissions = [];
 
     public function mount()
     {
@@ -16,13 +16,26 @@ new class extends Component
 
     public function loadData()
     {
-        $this->roles = Role::with('permissions')->orderBy('name')->get();
-        $this->permissions = Permission::orderBy('name')->get();
+        $this->roles = Role::with('permissions')->orderBy('name')->get()->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'permissions' => $role->permissions->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                ])->toArray(),
+            ];
+        })->toArray();
+
+        $this->permissions = Permission::orderBy('name')->get()->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+        ])->toArray();
     }
 
     public function createRole($name)
     {
-        if (!$name) {
+        if (! $name) {
             return;
         }
 
@@ -34,8 +47,7 @@ new class extends Component
 
     public function deleteRole($roleId)
     {
-        $role = Role::findOrFail($roleId);
-        $role->delete();
+        Role::findOrFail($roleId)->delete();
 
         $this->dispatch('notify', type: 'success', message: 'Role deleted successfully.');
         $this->loadData();
@@ -80,12 +92,12 @@ new class extends Component
                             </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{{ $role->name }}</h2>
-                            <p class="text-xs text-zinc-500">{{ $role->permissions->count() }} permissions</p>
+                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{{ $role['name'] }}</h2>
+                            <p class="text-xs text-zinc-500">{{ count($role['permissions']) }} permissions</p>
                         </div>
                     </div>
-                    @if($role->name !== 'admin')
-                        <button wire:click="deleteRole({{ $role->id }})"
+                    @if($role['name'] !== 'admin')
+                        <button wire:click="deleteRole({{ $role['id'] }})"
                                 class="text-zinc-400 hover:text-red-500 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -98,10 +110,10 @@ new class extends Component
                 <div class="mb-4">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Permissions</p>
                     <div class="flex flex-wrap gap-1.5 mb-3">
-                        @forelse($role->permissions as $permission)
+                        @forelse($role['permissions'] as $permission)
                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                {{ $permission->name }}
-                                <button wire:click="removePermission({{ $role->id }}, {{ $permission->id }})"
+                                {{ $permission['name'] }}
+                                <button wire:click="removePermission({{ $role['id'] }}, {{ $permission['id'] }})"
                                         class="hover:text-emerald-900 dark:hover:text-emerald-200">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -117,12 +129,12 @@ new class extends Component
                 {{-- Add Permission --}}
                 <div>
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Add Permission</p>
-                    <select wire:change="assignPermission({{ $role->id }}, $event.target.value)"
+                    <select wire:change="assignPermission({{ $role['id'] }}, $event.target.value)"
                             class="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                         <option value="">Select permission...</option>
                         @foreach($permissions as $permission)
-                            @if(!$role->hasPermissionTo($permission))
-                                <option value="{{ $permission->id }}">{{ $permission->name }}</option>
+                            @if(!collect($role['permissions'])->contains('id', $permission['id']))
+                                <option value="{{ $permission['id'] }}">{{ $permission['name'] }}</option>
                             @endif
                         @endforeach
                     </select>
@@ -155,7 +167,7 @@ new class extends Component
                         <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $permission->name }}</span>
+                        <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $permission['name'] }}</span>
                     </div>
                 @endforeach
             </div>
