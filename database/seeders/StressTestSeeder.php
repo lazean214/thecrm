@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\Team;
 use App\Models\User;
+use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -14,6 +15,11 @@ use Spatie\Permission\Models\Role;
 
 class StressTestSeeder extends Seeder
 {
+    /**
+     * Faker instance
+     */
+    private $faker;
+
     /**
      * Default user count for stress testing
      */
@@ -39,6 +45,8 @@ class StressTestSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->faker = Faker::create();
+
         $this->command->info('Starting Stress Test Data Seeder...');
         $this->command->info(str_repeat('-', 50));
 
@@ -145,7 +153,7 @@ class StressTestSeeder extends Seeder
                 [
                     'email' => "company{$i}@".Str::random(8).'.test.com',
                     'domain' => "company{$i}.test.com",
-                    'phone' => fake()->phoneNumber(),
+                    'phone' => $this->faker->phoneNumber(),
                 ]
             );
         }
@@ -174,21 +182,21 @@ class StressTestSeeder extends Seeder
                         'email' => "contact_{$company->id}_{$i}@test.com",
                     ],
                     [
-                        'first_name' => fake()->firstName(),
-                        'last_name' => fake()->lastName(),
-                        'phone' => fake()->phoneNumber(),
-                        'street_address' => fake()->streetAddress(),
-                        'city' => fake()->city(),
-                        'state' => fake()->state(),
-                        'postal_code' => fake()->postcode(),
+                        'first_name' => $this->faker->firstName(),
+                        'last_name' => $this->faker->lastName(),
+                        'phone' => $this->faker->phoneNumber(),
+                        'street_address' => $this->faker->streetAddress(),
+                        'city' => $this->faker->city(),
+                        'state' => $this->faker->state(),
+                        'postal_code' => $this->faker->postcode(),
                         'country' => 'United Kingdom',
-                        'ni_number' => strtoupper(fake()->bothify('??######?')),
-                        'bank' => fake()->company(),
-                        'account_number' => fake()->numerify('########'),
-                        'sort_code' => fake()->numerify('##-##-##'),
-                        'date_of_birth' => fake()->date(),
-                        'marital_status' => fake()->randomElement(['single', 'married', 'divorced', 'widowed']),
-                        'gender' => fake()->randomElement(['male', 'female', 'other']),
+                        'ni_number' => strtoupper($this->faker->bothify('??######?')),
+                        'bank' => $this->faker->company(),
+                        'account_number' => $this->faker->numerify('########'),
+                        'sort_code' => $this->faker->numerify('##-##-##'),
+                        'date_of_birth' => $this->faker->date(),
+                        'marital_status' => $this->faker->randomElement(['single', 'married', 'divorced', 'widowed']),
+                        'gender' => $this->faker->randomElement(['male', 'female', 'other']),
                     ]
                 );
 
@@ -228,25 +236,25 @@ class StressTestSeeder extends Seeder
 
             $deal = Deal::create([
                 'name' => "Stress Test Deal {$i}",
-                'amount' => fake()->numberBetween(5000, 50000),
-                'stage' => fake()->randomElement(['doc sent', 'doc signed', 'compliant', 'ready for payment', 'paid']),
-                'recruitment_agency' => fake()->randomElement(['Inbound', 'Referral']),
+                'amount' => $this->faker->numberBetween(5000, 50000),
+                'stage' => $this->faker->randomElement(['doc sent', 'doc signed', 'compliant', 'ready for payment', 'paid']),
+                'recruitment_agency' => $this->faker->randomElement(['Inbound', 'Referral']),
                 'consultant_name' => $company->name,
-                'agency_deal_value' => fake()->randomFloat(2, 1000, 25000),
-                'margin_agreed' => fake()->randomFloat(2, 5, 40),
-                'date_sent' => fake()->optional(0.6)->date(),
-                'date_signed' => fake()->optional(0.4)->date(),
-                'who_signed' => fake()->optional(0.4)->name(),
-                'mda_setup' => fake()->boolean(30),
-                'mda_reference_number' => fake()->optional(0.3)->bothify('MDA-####'),
-                'date_set_up' => fake()->optional(0.3)->date(),
-                'remittance_received' => fake()->boolean(40),
-                'date_logged' => fake()->optional(0.8)->date(),
+                'agency_deal_value' => $this->faker->randomFloat(2, 1000, 25000),
+                'margin_agreed' => $this->faker->randomFloat(2, 5, 40),
+                'date_sent' => $this->faker->optional(0.6)->date(),
+                'date_signed' => $this->faker->optional(0.4)->date(),
+                'who_signed' => $this->faker->optional(0.4)->name(),
+                'mda_setup' => $this->faker->boolean(30),
+                'mda_reference_number' => $this->faker->optional(0.3)->bothify('MDA-####'),
+                'date_set_up' => $this->faker->optional(0.3)->date(),
+                'remittance_received' => $this->faker->boolean(40),
+                'date_logged' => $this->faker->optional(0.8)->date(),
                 'user_id' => $user->id,
-                'starter_checklist_recieved_date' => fake()->optional(0.5)->date(),
-                'starter_form' => fake()->boolean(60),
-                'tax_code' => fake()->optional(0.5)->bothify('TAX-####'),
-                'contract_recieved_date' => fake()->optional(0.4)->date(),
+                'starter_checklist_recieved_date' => $this->faker->optional(0.5)->date(),
+                'starter_form' => $this->faker->boolean(60),
+                'tax_code' => $this->faker->optional(0.5)->bothify('TAX-####'),
+                'contract_recieved_date' => $this->faker->optional(0.4)->date(),
                 'stage_updated_at' => now(),
             ]);
 
