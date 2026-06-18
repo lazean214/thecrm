@@ -4,6 +4,7 @@ use App\Enums\DealStage;
 use App\Models\Deal;
 use App\Models\User;
 use App\Models\Company;
+use App\Models\Contact;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Computed;
@@ -30,6 +31,7 @@ new class extends Component {
 
     // ── Loading States ─────────────────────────────────
     public bool $tableLoading = false;
+    public bool $filtering = false;
 
     // ── Cursor Pagination ────────────────────────────────
     public ?string $cursor = null;
@@ -95,6 +97,7 @@ new class extends Component {
     // ── Deferred Lookups ────────────────────────────────
     public array $allUsers = [];
     public array $allCompanies = [];
+    public array $allContacts = [];
     public bool $lookupsLoaded = false;
 
     // ─────────────────────────────────────────────────────
@@ -130,6 +133,20 @@ new class extends Component {
     public function mount(): void
     {
         $this->stages = array_map(fn ($s) => $s->value, DealStage::cases());
+
+        // Load lookups eagerly so they're available for Alpine autocomplete
+        $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
+        $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
+        $this->allContacts = Contact::orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => trim($c->first_name . ' ' . $c->last_name),
+                'first_name' => $c->first_name,
+                'last_name' => $c->last_name,
+            ])
+            ->toArray();
+        $this->lookupsLoaded = true;
 
         // Restore session state
         $state = Session::get('deals_view_state', []);
@@ -190,7 +207,19 @@ new class extends Component {
         if (! $this->lookupsLoaded) {
             $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
             $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
+            $this->allContacts = Contact::orderBy('first_name')
+                ->get(['id', 'first_name', 'last_name'])
+                ->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => trim($c->first_name . ' ' . $c->last_name),
+                    'first_name' => $c->first_name,
+                    'last_name' => $c->last_name,
+                ])
+                ->toArray();
             $this->lookupsLoaded = true;
+
+            // Dispatch event so Alpine components can update their items
+            $this->dispatch('lookupsLoaded');
         }
     }
 
@@ -317,6 +346,13 @@ new class extends Component {
     }
     public function updatedDateTo(): void { $this->onFilterChanged(); }
 
+    public function applyFilters(): void
+    {
+        $this->filtering = true;
+        $this->onFilterChanged();
+        $this->filtering = false;
+    }
+
     public function updatedPerPage(): void
     {
         $this->currentPage = 1;
@@ -338,11 +374,7 @@ new class extends Component {
         ]);
         $this->dateFrom = now()->startOfMonth()->toDateString();
         $this->isDefaultDateRange = true;
-        $this->currentPage = 1;
-        $this->cursor = null;
-        unset($this->dealsForTable);
-        $this->persistState();
-        $this->resetBatchState();
+        $this->onFilterChanged();
     }
 
     // ─────────────────────────────────────────────────────
@@ -897,8 +929,10 @@ new class extends Component {
         }
 
         if (! empty($this->filterContact)) {
-            $query->whereHas('contacts', fn ($q) => $q->where('first_name', 'like', '%' . $this->filterContact . '%')
-                ->orWhere('last_name', 'like', '%' . $this->filterContact . '%'));
+            $query->whereHas('contacts', fn ($q) => $q->where(function ($sub) {
+                $sub->where('first_name', 'like', '%' . $this->filterContact . '%')
+                    ->orWhere('last_name', 'like', '%' . $this->filterContact . '%');
+            }));
         }
 
         return $query;
@@ -1103,6 +1137,19 @@ new class extends Component {
     {{-- Loading indicator --}}
     <div wire:loading.delay class="fixed top-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 z-50 animate-pulse"></div>
 
+    {{-- Filter loading overlay --}}
+    @if($filtering)
+        <div class="fixed inset-0 bg-white/30 dark:bg-slate-900/30 z-40 flex items-center justify-center pointer-events-none">
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg px-6 py-4 flex items-center gap-3">
+                <svg class="w-5 h-5 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+                </svg>
+                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Applying filters...</span>
+            </div>
+        </div>
+    @endif
+
     {{-- Header --}}
     <div class="w-full border-b border-slate-200 dark:border-slate-800 pb-5 mb-4">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -1161,7 +1208,7 @@ new class extends Component {
 
     {{-- Kanban View --}}
     @if ($view === 'kanban')
-        <div wire:key="kanban-board">
+        <div wire:key="kanban-board" wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">
             @php
                 $stageConfig = [
                     'doc sent' => ['accent' => '#4f46e5', 'accentLight' => 'rgba(79,70,229,0.12)', 'accentText' => '#3730a3', 'icon' => '📄', 'label' => 'Doc Sent'],
@@ -1182,7 +1229,7 @@ new class extends Component {
 
     {{-- Table View --}}
     @if ($view === 'table')
-        <div wire:key="table-view-{{ $currentPage }}">
+        <div wire:key="table-view-{{ $currentPage }}" wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">
             @php
                 $stageConfig = [
                     'doc sent' => ['accent' => '#4f46e5', 'accentLight' => 'rgba(79,70,229,0.12)', 'accentText' => '#3730a3', 'icon' => '📄', 'label' => 'Doc Sent'],

@@ -142,21 +142,23 @@
             {{-- Body --}}
             <div class="p-6 space-y-5 max-h-[calc(100vh-16rem)] overflow-y-auto">
 
-                {{-- Row 1: Owner (autocomplete) & Contact --}}
+                {{-- Row 1: Owner & Contact --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     {{-- Owner autocomplete --}}
                     <div class="space-y-1.5"
                         x-data="{
-                            query: @entangle('filterOwner').live,
                             open: false,
                             items: @js($allUsers),
                             get filtered() {
-                                if (!this.query) return this.items.slice(0, 8);
-                                const q = this.query.toLowerCase();
+                                if (!this.$wire.filterOwner) return this.items.slice(0, 8);
+                                const q = this.$wire.filterOwner.toLowerCase();
                                 return this.items.filter(i => i.name.toLowerCase().includes(q)).slice(0, 8);
                             },
-                            select(name) { this.query = name; this.open = false; }
+                            select(name) {
+                                this.open = false;
+                                this.$wire.filterOwner = name;
+                            }
                         }"
                         @keydown.escape="open = false"
                         @click.away="open = false"
@@ -168,14 +170,14 @@
                             </div>
                             <input
                                 type="text"
-                                x-model="query"
+                                wire:model.live.debounce.250ms="filterOwner"
                                 @focus="open = true"
                                 @input="open = true"
                                 placeholder="Search owner..."
                                 autocomplete="off"
                                 class="block w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
                             >
-                            <button x-show="query" @click="select('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <button x-show="$wire.filterOwner" @click="select('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                             <ul x-show="open && filtered.length > 0" x-cloak class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
@@ -189,33 +191,70 @@
                         </div>
                     </div>
 
-                    {{-- Contact free-text --}}
-                    <div class="space-y-1.5">
+                    {{-- Contact autocomplete --}}
+                    <div class="space-y-1.5"
+                        x-data="{
+                            open: false,
+                            items: @js($allContacts),
+                            get filtered() {
+                                if (!this.$wire.filterContact) return this.items.slice(0, 8);
+                                const q = this.$wire.filterContact.toLowerCase();
+                                return this.items.filter(i => i.name.toLowerCase().includes(q)).slice(0, 8);
+                            },
+                            select(name) {
+                                this.open = false;
+                                this.$wire.filterContact = name;
+                            }
+                        }"
+                        @keydown.escape="open = false"
+                        @click.away="open = false"
+                    >
                         <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Contact Name</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             </div>
-                            <input type="text" wire:model.live.debounce.250ms="filterContact" placeholder="Filter by contact..." class="block w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition">
+                            <input
+                                type="text"
+                                wire:model.live.debounce.250ms="filterContact"
+                                @focus="open = true"
+                                @input="open = true"
+                                placeholder="Search contact..."
+                                autocomplete="off"
+                                class="block w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
+                            >
+                            <button x-show="$wire.filterContact" @click="select('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <ul x-show="open && filtered.length > 0" x-cloak class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
+                                <template x-for="item in filtered" :key="item.id">
+                                    <li @click="select(item.name)" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 cursor-pointer">
+                                        <span class="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 text-xs flex items-center justify-center font-semibold shrink-0" x-text="item.first_name.charAt(0).toUpperCase()"></span>
+                                        <span x-text="item.name"></span>
+                                    </li>
+                                </template>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                {{-- Row 2: Company (autocomplete) & Stage --}}
+                {{-- Row 2: Company & Stage --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     {{-- Company autocomplete --}}
                     <div class="space-y-1.5"
                         x-data="{
-                            query: @entangle('filterCompanyName').live,
                             open: false,
                             items: @js($allCompanies),
                             get filtered() {
-                                if (!this.query) return this.items;
-                                const q = this.query.toLowerCase();
-                                return this.items.filter(i => i.name.toLowerCase().includes(q));
+                                if (!this.$wire.filterCompanyName) return this.items.slice(0, 8);
+                                const q = this.$wire.filterCompanyName.toLowerCase();
+                                return this.items.filter(i => i.name.toLowerCase().includes(q)).slice(0, 8);
                             },
-                            select(name) { this.query = name; this.open = false; }
+                            select(name) {
+                                this.open = false;
+                                this.$wire.filterCompanyName = name;
+                            }
                         }"
                         @keydown.escape="open = false"
                         @click.away="open = false"
@@ -227,14 +266,14 @@
                             </div>
                             <input
                                 type="text"
-                                x-model="query"
+                                wire:model.live.debounce.250ms="filterCompanyName"
                                 @focus="open = true"
                                 @input="open = true"
                                 placeholder="Search company..."
                                 autocomplete="off"
                                 class="block w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition"
                             >
-                            <button x-show="query" @click="select('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <button x-show="$wire.filterCompanyName" @click="select('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                             <ul x-show="open && filtered.length > 0" x-cloak class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-52 overflow-y-auto">
@@ -299,9 +338,14 @@
 
             {{-- Footer --}}
             <div class="bg-slate-50 dark:bg-slate-800/40 px-6 py-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                <span class="text-xs text-slate-400">Changes apply in real-time</span>
-                <button @click="open = false" type="button" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm transition">
-                    View Results
+                <span class="text-xs text-slate-400">Select filters then click View Results</span>
+                <button @click="open = false; $wire.applyFilters()" wire:loading.attr="disabled" wire:target="applyFilters" type="button" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm transition flex items-center gap-2">
+                    <svg wire:loading wire:target="applyFilters" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+                    </svg>
+                    <span wire:loading.remove wire:target="applyFilters">View Results</span>
+                    <span wire:loading wire:target="applyFilters">Loading...</span>
                 </button>
             </div>
         </div>
