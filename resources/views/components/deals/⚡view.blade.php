@@ -6,7 +6,7 @@ use App\Models\Deal;
 use App\Models\Contact;
 use App\Models\Company;
 use App\Enums\DealStage;
-use App\Enums\InternalCompany;
+use App\Helpers\InternalCompanies;
 use Livewire\WithFileUploads;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Models\User;
@@ -98,11 +98,7 @@ new class extends Component {
 
         $this->stages = [DealStage::DOC_SENT, DealStage::DOC_SIGNED, DealStage::COMPLIANT, DealStage::READY_FOR_PAYMENT, DealStage::PAID];
 
-        $this->internalCompanies = [
-            ['id' => 1, 'name' => InternalCompany::UMBRELLACOMPANY->value],
-            ['id' => 2, 'name' => InternalCompany::CHURCHILL_KNIGHT_UMBRELLA->value],
-            ['id' => 3, 'name' => InternalCompany::CHURCHILL_KNIGHT_ASSOCIATES->value],
-        ];
+        $this->internalCompanies = InternalCompanies::all();
 
         $this->owners = User::select('id', 'name')->get();
 

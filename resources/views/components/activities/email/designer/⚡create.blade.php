@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\InternalCompany;
+use App\Helpers\InternalCompanies;
 use App\Models\EmailTemplate;
 use App\Models\EmailTemplateAttachment;
 use App\Services\EmailTemplateParser;
@@ -66,12 +66,17 @@ new class extends Component
 
     public static function getEmailTemplateView(?string $companySlug): string
     {
-        return match ($companySlug) {
-            'umbrella-company' => 'email.umbrellacompany-uk',
-            'churchill-knight-umbrella' => 'email.churchill-knight-umbrella',
-            'churchill-knight-associates' => 'email.churchill-knight-associates',
-            default => 'email.simple-template',
-        };
+        if (! $companySlug) {
+            return 'email.simple-template';
+        }
+
+        $company = InternalCompanies::getBySlug($companySlug);
+
+        if (! $company) {
+            return 'email.simple-template';
+        }
+
+        return 'email.' . $companySlug;
     }
 
     public function mount(?int $templateId = null): void
@@ -458,9 +463,9 @@ new class extends Component
                             wire:model="internalCompany"
                             class="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-emerald-500 focus:outline-none">
                             <option value="">-- None --</option>
-                            <option value="umbrella-company">Umbrella Company UK</option>
-                            <option value="churchill-knight-umbrella">Churchill Knight Umbrella</option>
-                            <option value="churchill-knight-associates">Churchill Knight Associates</option>
+                            @foreach (\App\Helpers\InternalCompanies::all() as $company)
+                                <option value="{{ $company['slug'] }}">{{ ucfirst($company['name']) }}</option>
+                            @endforeach
                         </select>
                     </div>
 

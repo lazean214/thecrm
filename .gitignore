@@ -58,3 +58,6 @@ Thumbs.db
 
 # CRM Automation
 crm-automation/
+
+# Sensitive company data (contains real company names)
+app/Enums/InternalCompany.php
