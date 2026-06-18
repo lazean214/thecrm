@@ -178,7 +178,7 @@ new class extends Component {
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
@@ -193,11 +193,11 @@ new class extends Component {
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
-        if ($user->isSalesTeam() && ! $user->canMoveToStage($this->deals->stage->value)) {
+        if ($user->isSalesTeam() && !$user->canMoveToStage($this->deals->stage->value)) {
             return false;
         }
 
@@ -206,13 +206,13 @@ new class extends Component {
 
     public function setStage(string $stage): void
     {
-        if (! $this->canEdit()) {
+        if (!$this->canEdit()) {
             $this->dispatch('notify', type: 'error', message: 'You can only edit your own deals.');
 
             return;
         }
 
-        if (! $this->canChangeStage($stage)) {
+        if (!$this->canChangeStage($stage)) {
             $this->dispatch('notify', type: 'error', message: 'You are not authorised to move deals to this stage.');
 
             return;
@@ -258,7 +258,10 @@ new class extends Component {
         $this->showConsultantDropdown = false;
     }
 
-    public function closeConsultantDropdown(): void { $this->showConsultantDropdown = false; }
+    public function closeConsultantDropdown(): void
+    {
+        $this->showConsultantDropdown = false;
+    }
 
     public function updatedOwnerSearch(): void
     {
@@ -267,14 +270,10 @@ new class extends Component {
         $users = $this->owners;
 
         if ($query !== '') {
-            $users = $users->filter(fn ($user) => str_contains(strtolower($user->name), strtolower($query)));
+            $users = $users->filter(fn($user) => str_contains(strtolower($user->name), strtolower($query)));
         }
 
-        $this->ownerSuggestions = $users
-            ->take(8)
-            ->map(fn ($user) => ['id' => $user->id, 'name' => $user->name])
-            ->values()
-            ->toArray();
+        $this->ownerSuggestions = $users->take(8)->map(fn($user) => ['id' => $user->id, 'name' => $user->name])->values()->toArray();
 
         $this->showOwnerDropdown = count($this->ownerSuggestions) > 0;
     }
@@ -287,7 +286,10 @@ new class extends Component {
         $this->showOwnerDropdown = false;
     }
 
-    public function closeOwnerDropdown(): void { $this->showOwnerDropdown = false; }
+    public function closeOwnerDropdown(): void
+    {
+        $this->showOwnerDropdown = false;
+    }
 
     /**
      * Validation rules grouped for reuse.
@@ -313,7 +315,7 @@ new class extends Component {
 
     public function save(): void
     {
-        if (! $this->canEdit()) {
+        if (!$this->canEdit()) {
             $this->dispatch('notify', type: 'error', message: 'You can only edit your own deals.');
 
             return;
@@ -369,13 +371,13 @@ new class extends Component {
         }
 
         // ── Sync company if consultant changed ──
-        if (! empty($this->consultant_name) && $originalDeal->consultant_name !== $this->consultant_name) {
+        if (!empty($this->consultant_name) && $originalDeal->consultant_name !== $this->consultant_name) {
             $company = Company::firstOrCreate(['name' => $this->consultant_name]);
             $this->deals->companies()->syncWithPivotValues([$company->id], ['is_primary' => true]);
             $this->deals->logAssociationChange('company', 'updated', $company, "Consultant/Agency changed from \"{$originalDeal->consultant_name}\" to \"{$this->consultant_name}\"");
 
             $primaryContact = $this->deals->contacts()->first();
-            if ($primaryContact && ! $company->contacts()->where('contacts.id', $primaryContact->id)->exists()) {
+            if ($primaryContact && !$company->contacts()->where('contacts.id', $primaryContact->id)->exists()) {
                 $company->contacts()->attach($primaryContact->id);
             }
 
@@ -449,15 +451,83 @@ new class extends Component {
 
     public function syncToMDA(): void
     {
-        session()->flash('message', 'Data synced to MDA successfully!');
+        if (!$this->canEdit()) {
+            $this->dispatch('notify', type: 'error', message: 'You can only edit your own deals.');
+
+            return;
+        }
+
+        $contact = $this->contacts->first();
+
+        if (!$contact || !$contact->email) {
+            $this->dispatch('notify', type: 'error', message: 'A contact with email is required to sync to MDA.');
+
+            return;
+        }
+
+        if (empty($this->mda_setup)) {
+            $this->dispatch('notify', type: 'error', message: 'Please select an MDA Setup before syncing.');
+
+            return;
+        }
+
+        try {
+            // Map internal company name to MDA company ID
+            $mdaCompanyId = $this->getMdaCompanyId($this->mda_setup);
+
+            if (!$mdaCompanyId) {
+                $this->dispatch('notify', type: 'error', message: 'Could not find MDA company configuration.');
+
+                return;
+            }
+
+            // Prepare employee data from deal/contact
+            $employeeData = [
+                'company_id' => $mdaCompanyId,
+                'first_name' => $contact->first_name,
+                'last_name' => $contact->last_name,
+                'email' => $contact->email,
+                'phone' => $contact->phone,
+            ];
+
+            // Create or update employee via MDA API
+            $action = app(\Modules\MyDigitalAccounts\Actions\CreateEmployeeAction::class);
+            $result = $action->execute($employeeData);
+
+            // Store the MDA employee ID as reference number
+            $this->deals->update(['mda_reference_number' => $result->id]);
+            $this->mda_reference_number = $result->id;
+
+            // Log the activity
+            $this->deals->logFieldUpdate(
+                'mda_sync',
+                'new',
+                $mdaCompanyId,
+                'Synced to MDA: ' . $contact->first_name . ' ' . $contact->last_name,
+            );
+
+            $this->dispatch('notify', type: 'success', message: 'Employee synced to MDA successfully.');
+        } catch (\Throwable $e) {
+            logger()->error('MDA sync failed: ' . $e->getMessage());
+
+            $this->dispatch('notify', type: 'error', message: 'Failed to sync to MDA. Please try again.');
+        }
+    }
+
+    /**
+     * Get MDA company ID from internal company name
+     */
+    private function getMdaCompanyId(string $internalCompanyName): ?string
+    {
+        $mapping = config('internal_companies.mda_company_mapping', []);
+
+        return $mapping[$internalCompanyName] ?? null;
     }
 
     public function deleteMedia(int $mediaId): void
     {
         try {
-            $media = Media::where('model_type', Deal::class)
-                ->where('model_id', $this->deals->id)
-                ->findOrFail($mediaId);
+            $media = Media::where('model_type', Deal::class)->where('model_id', $this->deals->id)->findOrFail($mediaId);
 
             $media->delete();
             $this->deals->refresh();
@@ -474,11 +544,41 @@ new class extends Component {
 
 @php
     $stageConfig = [
-        'doc sent' => ['accent' => '#4f46e5', 'accentLight' => 'rgba(79,70,229,0.12)', 'accentText' => '#3730a3', 'icon' => '📄', 'label' => 'Doc Sent'],
-        'doc signed' => ['accent' => '#0891b2', 'accentLight' => 'rgba(8,145,178,0.12)', 'accentText' => '#155e75', 'icon' => '✍️', 'label' => 'Doc Signed'],
-        'compliant' => ['accent' => '#54ff54', 'accentLight' => 'rgba(217,119,6,0.12)', 'accentText' => '#57b929', 'icon' => '✅', 'label' => 'Compliant'],
-        'ready for payment' => ['accent' => '#ea580c', 'accentLight' => 'rgba(234,88,12,0.12)', 'accentText' => '#9a3412', 'icon' => '💳', 'label' => 'Ready for Payment'],
-        'paid' => ['accent' => '#16a34a', 'accentLight' => 'rgba(22,163,74,0.12)', 'accentText' => '#14532d', 'icon' => '💰', 'label' => 'Paid'],
+        'doc sent' => [
+            'accent' => '#4f46e5',
+            'accentLight' => 'rgba(79,70,229,0.12)',
+            'accentText' => '#3730a3',
+            'icon' => '📄',
+            'label' => 'Doc Sent',
+        ],
+        'doc signed' => [
+            'accent' => '#0891b2',
+            'accentLight' => 'rgba(8,145,178,0.12)',
+            'accentText' => '#155e75',
+            'icon' => '✍️',
+            'label' => 'Doc Signed',
+        ],
+        'compliant' => [
+            'accent' => '#54ff54',
+            'accentLight' => 'rgba(217,119,6,0.12)',
+            'accentText' => '#57b929',
+            'icon' => '✅',
+            'label' => 'Compliant',
+        ],
+        'ready for payment' => [
+            'accent' => '#ea580c',
+            'accentLight' => 'rgba(234,88,12,0.12)',
+            'accentText' => '#9a3412',
+            'icon' => '💳',
+            'label' => 'Ready for Payment',
+        ],
+        'paid' => [
+            'accent' => '#16a34a',
+            'accentLight' => 'rgba(22,163,74,0.12)',
+            'accentText' => '#14532d',
+            'icon' => '💰',
+            'label' => 'Paid',
+        ],
     ];
 @endphp
 
@@ -497,6 +597,9 @@ new class extends Component {
 
     <div class="flex flex-wrap">
         <aside class="w-2/6 mb-24">
+
+
+
             @include('components.deals.partials.views.⚡deals-details')
             @include('components.deals.partials.views.⚡worker-details')
             @include('components.deals.partials.views.⚡mda-details')
@@ -505,22 +608,19 @@ new class extends Component {
         <main class="w-4/6 px-5">
             {{-- Tab Bar --}}
             <div class="mb-6">
-                <div class="inline-flex w-full rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1 shadow-sm border border-slate-200 dark:border-slate-700">
-                    @foreach ([
-                        ['key' => 'overview', 'label' => 'Overview', 'icon' => 'M3.385 18q-.69 0-1.153-.462t-.463-1.153v-8.77q0-.69.463-1.152T3.384 6h8.77q.69 0 1.153.463t.462 1.153v8.769q0 .69-.462 1.153T12.154 18zm0-1h8.769q.23 0 .423-.192q.192-.193.192-.424V7.616q0-.231-.192-.424T12.154 7h-8.77q-.23 0-.422.192t-.193.423v8.77q0 .23.193.423t.423.192M17 18V6h1v12zm4.23 0V6h1v12zM2.77 17V7z'],
-                        ['key' => 'activities', 'label' => 'Activities', 'icon' => 'M2.5 13a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1zm-3-3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1zm-9-3a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1zm-3-3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1zm-9-3a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1z'],
-                        ['key' => 'email', 'label' => 'Welcome Email', 'icon' => 'm5 4l4.5 3L14 4M2 8.5h5m-4 2h5m-3.5 2h10v-9h-10v3H1'],
-                        ['key' => 'history', 'label' => 'History', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    ] as $tab)
+                <div
+                    class="inline-flex w-full rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1 shadow-sm border border-slate-200 dark:border-slate-700">
+                    @foreach ([['key' => 'overview', 'label' => 'Overview', 'icon' => 'M3.385 18q-.69 0-1.153-.462t-.463-1.153v-8.77q0-.69.463-1.152T3.384 6h8.77q.69 0 1.153.463t.462 1.153v8.769q0 .69-.462 1.153T12.154 18zm0-1h8.769q.23 0 .423-.192q.192-.193.192-.424V7.616q0-.231-.192-.424T12.154 7h-8.77q-.23 0-.422.192t-.193.423v8.77q0 .23.193.423t.423.192M17 18V6h1v12zm4.23 0V6h1v12zM2.77 17V7z'], ['key' => 'activities', 'label' => 'Activities', 'icon' => 'M2.5 13a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1zm-3-3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1zm-9-3a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1zm-3-3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1zm-9-3a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm12 0a.5.5 0 0 1 0 1h-10a.5.5 0 0 1 0-1z'], ['key' => 'email', 'label' => 'Welcome Email', 'icon' => 'm5 4l4.5 3L14 4M2 8.5h5m-4 2h5m-3.5 2h10v-9h-10v3H1'], ['key' => 'history', 'label' => 'History', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z']] as $tab)
                         <button wire:click="$set('openTabs', '{{ $tab['key'] }}')" @class([
                             'flex-1 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300',
                             'bg-indigo-500 text-white shadow-md' => $openTabs === $tab['key'],
-                            'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/50' => $openTabs !== $tab['key'],
+                            'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/50' =>
+                                $openTabs !== $tab['key'],
                         ])>
                             <div class="flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24">
-                                    <path d="M0 0h24v24H0z" fill="none"/>
-                                    <path fill="currentColor" d="{{ $tab['icon'] }}"/>
+                                    <path d="M0 0h24v24H0z" fill="none" />
+                                    <path fill="currentColor" d="{{ $tab['icon'] }}" />
                                 </svg>
                                 {{ $tab['label'] }}
                             </div>
@@ -531,23 +631,34 @@ new class extends Component {
 
             {{-- Tab Content --}}
             @if ($openTabs === 'overview')
-                <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Deal Overview</h2>
-                    @include('signable::components.envelope.wizard', ['deal' => $deals ?? null, 'templates' => $templates ?? []])
+                <section
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                        Deal Overview</h2>
+                    @include('signable::components.envelope.wizard', [
+                        'deal' => $deals ?? null,
+                        'templates' => $templates ?? [],
+                    ])
                 </section>
             @elseif ($openTabs === 'activities')
-                <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Activity Feed</h2>
+                <section
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                        Activity Feed</h2>
                     @livewire('activities.task.index', ['dealId' => $deals->id ?? null])
                 </section>
             @elseif ($openTabs === 'email')
-                <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Worker Welcome Email</h2>
+                <section
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                        Worker Welcome Email</h2>
                     @livewire('activities.email.index', ['dealId' => $deals->id ?? null])
                 </section>
             @elseif ($openTabs === 'history')
-                <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Deal Activity History</h2>
+                <section
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                        Deal Activity History</h2>
                     @include('components.deals.partials.⚡history-timeline', ['deal' => $deals])
                 </section>
             @endif
@@ -555,31 +666,45 @@ new class extends Component {
             @include('components.deals.partials.views.⚡compliance-details')
 
             {{-- Documents Section --}}
-            <section class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
-                <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Attached Documents</h2>
+            <section
+                class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 mb-4 shadow-sm">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                    Attached Documents</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     @foreach (['compliance_documents' => '📄', 'contract_documents' => '📑'] as $collection => $icon)
-                        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-5">
+                        <div
+                            class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-5">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <h3
+                                    class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     {{ str_replace('_', ' ', ucwords($collection, '_')) }}
                                 </h3>
-                                <span class="text-xs text-slate-400 dark:text-slate-500">{{ $deals->getMedia($collection)->count() }} files</span>
+                                <span
+                                    class="text-xs text-slate-400 dark:text-slate-500">{{ $deals->getMedia($collection)->count() }}
+                                    files</span>
                             </div>
                             <div class="space-y-3">
                                 @forelse($deals->getMedia($collection) as $file)
-                                    <div class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                                    <div
+                                        class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
                                         <div class="flex items-center gap-3 min-w-0">
-                                            <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-sm">{{ $icon }}</div>
+                                            <div
+                                                class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-sm">
+                                                {{ $icon }}</div>
                                             <div class="min-w-0">
-                                                <a href="{{ $file->getUrl() }}" target="_blank" class="text-sm font-medium text-slate-900 dark:text-white hover:text-indigo-500 truncate block">{{ $file->file_name }}</a>
-                                                <p class="text-xs text-slate-400 dark:text-slate-500">{{ number_format($file->size / 1024, 2) }} KB</p>
+                                                <a href="{{ $file->getUrl() }}" target="_blank"
+                                                    class="text-sm font-medium text-slate-900 dark:text-white hover:text-indigo-500 truncate block">{{ $file->file_name }}</a>
+                                                <p class="text-xs text-slate-400 dark:text-slate-500">
+                                                    {{ number_format($file->size / 1024, 2) }} KB</p>
                                             </div>
                                         </div>
-                                        <button type="button" wire:click="deleteMedia({{ $file->id }})" wire:confirm="Are you sure you want to delete this document?" class="px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">Delete</button>
+                                        <button type="button" wire:click="deleteMedia({{ $file->id }})"
+                                            wire:confirm="Are you sure you want to delete this document?"
+                                            class="px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">Delete</button>
                                     </div>
                                 @empty
-                                    <div class="text-sm text-slate-400 dark:text-slate-500 italic">No documents uploaded.</div>
+                                    <div class="text-sm text-slate-400 dark:text-slate-500 italic">No documents
+                                        uploaded.</div>
                                 @endforelse
                             </div>
                         </div>
@@ -590,14 +715,18 @@ new class extends Component {
     </div>
 
     {{-- Fixed bottom bar --}}
-    <div class="fixed bg-white dark:bg-slate-800 w-full py-4 bottom-0 right-0 flex justify-end gap-3 px-6 border-t border-slate-200 dark:border-slate-700 shadow-sm">
+    <div
+        class="fixed bg-white dark:bg-slate-800 w-full py-4 bottom-0 right-0 flex justify-end gap-3 px-6 border-t border-slate-200 dark:border-slate-700 shadow-sm">
         @if (session('success'))
-            <span class="self-center text-sm text-emerald-600 dark:text-emerald-400 font-medium">{{ session('success') }}</span>
+            <span
+                class="self-center text-sm text-emerald-600 dark:text-emerald-400 font-medium">{{ session('success') }}</span>
         @endif
         @if (session('info'))
             <span class="self-center text-sm text-slate-500 dark:text-slate-400">{{ session('info') }}</span>
         @endif
-        <button class="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-5 py-2.5 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition" wire:click="disregard">
+        <button
+            class="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-5 py-2.5 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+            wire:click="disregard">
             Disregard
         </button>
         <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"
@@ -605,7 +734,8 @@ new class extends Component {
             <span wire:loading.remove wire:target="save">Save Changes</span>
             <span wire:loading.flex wire:target="save" class="items-center gap-2">
                 <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                        stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"></path>
                 </svg>
                 <span>Saving...</span>
