@@ -1,0 +1,4 @@
+[    2316ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://thecrm.test/_boost/browser-logs @ http://thecrm.test/deals:193
+[    2322ms] TypeError: Cannot read properties of undefined (reading 'data')
+    at http://thecrm.test/deals:2647:29
+[    2403ms] [WARNING] Laravel Echo cannot be found @ http://thecrm.test/deals:252

@@ -327,10 +327,57 @@
                     </div>
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Created Date Range</label>
-                        <div class="flex items-center gap-2">
-                            <input type="date" wire:model.live="dateFrom" class="flex-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition">
-                            <span class="text-slate-400 text-xs shrink-0">to</span>
-                            <input type="date" wire:model.live="dateTo" class="flex-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition">
+                        <div class="relative" x-data="{
+                            picker: null,
+                            init() {
+                                this.$nextTick(() => {
+                                    if (!this.picker) {
+                                        const input = this.$refs.dateRangeInput;
+                                        this.picker = flatpickr(input, {
+                                            mode: 'range',
+                                            dateFormat: 'Y-m-d',
+                                            defaultDate: [
+                                                @if($dateFrom) new Date('{{ $dateFrom }}') @endif,
+                                                @if($dateTo) new Date('{{ $dateTo }}') @endif
+                                            ].filter(d => d),
+                                            onChange: (selectedDates, dateStr, instance) => {
+                                                if (selectedDates.length === 2) {
+                                                    this.$wire.dateFrom = instance.formatDate(selectedDates[0], 'Y-m-d');
+                                                    this.$wire.dateTo = instance.formatDate(selectedDates[1], 'Y-m-d');
+                                                } else if (selectedDates.length === 1) {
+                                                    this.$wire.dateFrom = instance.formatDate(selectedDates[0], 'Y-m-d');
+                                                    this.$wire.dateTo = '';
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            },
+                            clearDateRange() {
+                                if (this.picker) {
+                                    this.picker.clear();
+                                }
+                                this.$wire.dateFrom = '';
+                                this.$wire.dateTo = '';
+                            }
+                        }">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                            <input
+                                type="text"
+                                x-ref="dateRangeInput"
+                                placeholder="Select date range..."
+                                readonly
+                                class="block w-full pl-9 pr-10 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition cursor-pointer"
+                            >
+                            <button
+                                x-show="{{ $dateFrom || $dateTo ? 'true' : 'false' }}"
+                                @click="clearDateRange()"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
                         </div>
                     </div>
                 </div>

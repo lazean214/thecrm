@@ -1,0 +1,512 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "CRM Logo CRM" [ref=e4] [cursor=pointer]:
+        - /url: http://thecrm.test/dashboard
+        - img "CRM Logo" [ref=e6]
+        - generic [ref=e7]: CRM
+      - button [ref=e9]:
+        - img [ref=e10]
+    - navigation [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e15]: CRM
+        - generic [ref=e16]:
+          - link "Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: http://thecrm.test/dashboard
+            - img [ref=e20]
+            - generic [ref=e22]: Dashboard
+          - link "Deals" [ref=e24] [cursor=pointer]:
+            - /url: http://thecrm.test/deals
+            - img [ref=e26]
+            - generic [ref=e28]: Deals
+          - link "Contacts" [ref=e30] [cursor=pointer]:
+            - /url: http://thecrm.test/contacts
+            - img [ref=e32]
+            - generic [ref=e34]: Contacts
+          - link "Companies" [ref=e36] [cursor=pointer]:
+            - /url: http://thecrm.test/companies
+            - img [ref=e38]
+            - generic [ref=e40]: Companies
+      - generic [ref=e41]:
+        - generic [ref=e43]: Tools
+        - generic [ref=e44]:
+          - link "Envelopes" [ref=e46] [cursor=pointer]:
+            - /url: http://thecrm.test/envelopes
+            - img [ref=e48]
+            - generic [ref=e50]: Envelopes
+          - link "Email Designer" [ref=e52] [cursor=pointer]:
+            - /url: http://thecrm.test/designer
+            - img [ref=e54]
+            - generic [ref=e56]: Email Designer
+      - generic [ref=e57]:
+        - generic [ref=e59]: Administration
+        - generic [ref=e60]:
+          - link "Users" [ref=e62] [cursor=pointer]:
+            - /url: http://thecrm.test/users
+            - img [ref=e64]
+            - generic [ref=e66]: Users
+          - link "Teams" [ref=e68] [cursor=pointer]:
+            - /url: http://thecrm.test/teams
+            - img [ref=e70]
+            - generic [ref=e72]: Teams
+          - link "Roles" [ref=e74] [cursor=pointer]:
+            - /url: http://thecrm.test/roles
+            - img [ref=e76]
+            - generic [ref=e78]: Roles
+          - link "Permissions" [ref=e80] [cursor=pointer]:
+            - /url: http://thecrm.test/permissions
+            - img [ref=e82]
+            - generic [ref=e84]: Permissions
+          - link "GDPR Compliance" [ref=e86] [cursor=pointer]:
+            - /url: http://thecrm.test/admin/gdpr
+            - img [ref=e88]
+            - generic [ref=e90]: GDPR Compliance
+          - link "Pulse" [ref=e92] [cursor=pointer]:
+            - /url: http://thecrm.test/pulse
+            - img [ref=e94]
+            - generic [ref=e96]: Pulse
+      - generic [ref=e97]:
+        - generic [ref=e99]: My Account
+        - generic [ref=e100]:
+          - link "User Guide" [ref=e102] [cursor=pointer]:
+            - /url: http://thecrm.test/help
+            - img [ref=e104]
+            - generic [ref=e106]: User Guide
+          - link "Request My Data" [ref=e108] [cursor=pointer]:
+            - /url: http://thecrm.test/gdpr/export
+            - img [ref=e110]
+            - generic [ref=e112]: Request My Data
+          - link "Settings" [ref=e114] [cursor=pointer]:
+            - /url: http://thecrm.test/settings/profile
+            - img [ref=e116]
+            - generic [ref=e119]: Settings
+    - button "A Administrator" [ref=e122]:
+      - generic [ref=e125]: A
+      - generic [ref=e126]: Administrator
+      - img [ref=e128]
+  - generic [ref=e132]:
+    - button "New Deal" [ref=e135] [cursor=pointer]:
+      - img [ref=e136]
+      - text: New Deal
+    - generic [ref=e139]:
+      - generic [ref=e141]:
+        - generic [ref=e142]:
+          - heading "Deals Pipeline" [level=1] [ref=e143]
+          - paragraph [ref=e144]: Manage your pipeline tracking, stage workflows, and incoming financial volumes.
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - button "Kanban" [ref=e147]:
+              - img [ref=e148]
+              - text: Kanban
+            - button "Table" [ref=e152]:
+              - img [ref=e153]
+              - text: Table
+          - button "Refresh" [ref=e157]:
+            - img [ref=e158]
+          - link "Export Excel" [ref=e160] [cursor=pointer]:
+            - /url: http://thecrm.test/deals/export?dateFrom=2026-06-01
+            - img [ref=e161]
+            - generic [ref=e163]: Export Excel
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic:
+              - img
+            - textbox "Search deals by name..." [ref=e167]
+          - button "Filters" [ref=e169]:
+            - img [ref=e170]
+            - generic [ref=e172]: Filters
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - img [ref=e175]
+            - text: Showing June 2026
+          - button "View all time →" [ref=e177]
+      - generic [ref=e179]:
+        - generic [ref=e180]:
+          - generic [ref=e181]:
+            - generic [ref=e182]:
+              - generic [ref=e183]: 📄
+              - generic [ref=e184]: Doc Sent
+            - generic [ref=e186]: "14"
+          - generic [ref=e187]: £226,640 total TSV
+          - generic [ref=e188]:
+            - generic [ref=e190] [cursor=pointer]:
+              - generic [ref=e192]: ⠿
+              - generic [ref=e193]:
+                - paragraph [ref=e194]: Charles Kamau
+                - generic [ref=e195]:
+                  - generic [ref=e196]: £23,423
+                  - generic [ref=e197]: Charles Kamau
+                - generic [ref=e198]:
+                  - generic [ref=e199]:
+                    - img [ref=e200]
+                    - generic [ref=e202]: Day webster
+                  - generic [ref=e203]:
+                    - img [ref=e204]
+                    - generic [ref=e208]: Admin
+                  - generic [ref=e209]:
+                    - img [ref=e210]
+                    - generic [ref=e212]: 2d ago
+            - generic [ref=e214] [cursor=pointer]:
+              - generic [ref=e216]: ⠿
+              - generic [ref=e217]:
+                - paragraph [ref=e218]: Charmaine anderson
+                - generic [ref=e219]:
+                  - generic [ref=e220]: £14,850
+                  - generic [ref=e221]: Charmaine anderson
+                - generic [ref=e222]:
+                  - generic [ref=e223]:
+                    - img [ref=e224]
+                    - generic [ref=e226]: Your World
+                  - generic [ref=e227]:
+                    - img [ref=e228]
+                    - generic [ref=e232]: Admin
+                  - generic [ref=e233]:
+                    - img [ref=e234]
+                    - generic [ref=e236]: 2d ago
+            - generic [ref=e238] [cursor=pointer]:
+              - generic [ref=e240]: ⠿
+              - generic [ref=e241]:
+                - paragraph [ref=e242]: Tzozef Tzavelakos
+                - generic [ref=e243]:
+                  - generic [ref=e244]: £9,993
+                  - generic [ref=e245]: Tzozef Tzavelakos
+                - generic [ref=e246]:
+                  - generic [ref=e247]:
+                    - img [ref=e248]
+                    - generic [ref=e250]: Your World
+                  - generic [ref=e251]:
+                    - img [ref=e252]
+                    - generic [ref=e256]: Admin
+                  - generic [ref=e257]:
+                    - img [ref=e258]
+                    - generic [ref=e260]: 2d ago
+            - generic [ref=e262] [cursor=pointer]:
+              - generic [ref=e264]: ⠿
+              - generic [ref=e265]:
+                - paragraph [ref=e266]: Bolatito Olawepo
+                - generic [ref=e267]:
+                  - generic [ref=e268]: £16,273
+                  - generic [ref=e269]: Bolatito Olawepo
+                - generic [ref=e270]:
+                  - generic [ref=e271]:
+                    - img [ref=e272]
+                    - generic [ref=e274]: Your World
+                  - generic [ref=e275]:
+                    - img [ref=e276]
+                    - generic [ref=e280]: Admin
+                  - generic [ref=e281]:
+                    - img [ref=e282]
+                    - generic [ref=e284]: 2d ago
+            - generic [ref=e286] [cursor=pointer]:
+              - generic [ref=e288]: ⠿
+              - generic [ref=e289]:
+                - paragraph [ref=e290]: Maria Raquel Trio
+                - generic [ref=e291]:
+                  - generic [ref=e292]: £17,259
+                  - generic [ref=e293]: Maria Raquel Trio
+                - generic [ref=e294]:
+                  - generic [ref=e295]:
+                    - img [ref=e296]
+                    - generic [ref=e298]: Your World
+                  - generic [ref=e299]:
+                    - img [ref=e300]
+                    - generic [ref=e304]: Admin
+                  - generic [ref=e305]:
+                    - img [ref=e306]
+                    - generic [ref=e308]: 2d ago
+            - generic [ref=e310] [cursor=pointer]:
+              - generic [ref=e312]: ⠿
+              - generic [ref=e313]:
+                - paragraph [ref=e314]: Lorena Ciasico
+                - generic [ref=e315]:
+                  - generic [ref=e316]: £22,277
+                  - generic [ref=e317]: Lorena Ciasico
+                - generic [ref=e318]:
+                  - generic [ref=e319]:
+                    - img [ref=e320]
+                    - generic [ref=e322]: Your World
+                  - generic [ref=e323]:
+                    - img [ref=e324]
+                    - generic [ref=e328]: Admin
+                  - generic [ref=e329]:
+                    - img [ref=e330]
+                    - generic [ref=e332]: 2d ago
+            - generic [ref=e334] [cursor=pointer]:
+              - generic [ref=e336]: ⠿
+              - generic [ref=e337]:
+                - paragraph [ref=e338]: Florence Adu-Poku
+                - generic [ref=e339]:
+                  - generic [ref=e340]: £18,274
+                  - generic [ref=e341]: Florence Adu-Poku
+                - generic [ref=e342]:
+                  - generic [ref=e343]:
+                    - img [ref=e344]
+                    - generic [ref=e346]: Your World
+                  - generic [ref=e347]:
+                    - img [ref=e348]
+                    - generic [ref=e352]: Admin
+                  - generic [ref=e353]:
+                    - img [ref=e354]
+                    - generic [ref=e356]: 2d ago
+            - generic [ref=e358] [cursor=pointer]:
+              - generic [ref=e360]: ⠿
+              - generic [ref=e361]:
+                - paragraph [ref=e362]: Mervyn Aban
+                - generic [ref=e363]:
+                  - generic [ref=e364]: £11,646
+                  - generic [ref=e365]: Mervyn Aban
+                - generic [ref=e366]:
+                  - generic [ref=e367]:
+                    - img [ref=e368]
+                    - generic [ref=e370]: Your World
+                  - generic [ref=e371]:
+                    - img [ref=e372]
+                    - generic [ref=e376]: Admin
+                  - generic [ref=e377]:
+                    - img [ref=e378]
+                    - generic [ref=e380]: 2d ago
+            - generic [ref=e382] [cursor=pointer]:
+              - generic [ref=e384]: ⠿
+              - generic [ref=e385]:
+                - paragraph [ref=e386]: Barbara Siyachetma
+                - generic [ref=e387]:
+                  - generic [ref=e388]: £13,996
+                  - generic [ref=e389]: Barbara Siyachetma
+                - generic [ref=e390]:
+                  - generic [ref=e391]:
+                    - img [ref=e392]
+                    - generic [ref=e394]: Your World
+                  - generic [ref=e395]:
+                    - img [ref=e396]
+                    - generic [ref=e400]: Admin
+                  - generic [ref=e401]:
+                    - img [ref=e402]
+                    - generic [ref=e404]: 2d ago
+            - generic [ref=e406] [cursor=pointer]:
+              - generic [ref=e408]: ⠿
+              - generic [ref=e409]:
+                - paragraph [ref=e410]: Nazrin Akhtar
+                - generic [ref=e411]:
+                  - generic [ref=e412]: £9,587
+                  - generic [ref=e413]: Nazrin Akhtar
+                - generic [ref=e414]:
+                  - generic [ref=e415]:
+                    - img [ref=e416]
+                    - generic [ref=e418]: Your World
+                  - generic [ref=e419]:
+                    - img [ref=e420]
+                    - generic [ref=e424]: Admin
+                  - generic [ref=e425]:
+                    - img [ref=e426]
+                    - generic [ref=e428]: 2d ago
+            - generic [ref=e430] [cursor=pointer]:
+              - generic [ref=e432]: ⠿
+              - generic [ref=e433]:
+                - paragraph [ref=e434]: Kwesi Asaare-Koranchie
+                - generic [ref=e435]:
+                  - generic [ref=e436]: £17,964
+                  - generic [ref=e437]: Kwesi Asaare-Koranchie
+                - generic [ref=e438]:
+                  - generic [ref=e439]:
+                    - img [ref=e440]
+                    - generic [ref=e442]: Your World
+                  - generic [ref=e443]:
+                    - img [ref=e444]
+                    - generic [ref=e448]: Admin
+                  - generic [ref=e449]:
+                    - img [ref=e450]
+                    - generic [ref=e452]: 2d ago
+            - generic [ref=e454] [cursor=pointer]:
+              - generic [ref=e456]: ⠿
+              - generic [ref=e457]:
+                - paragraph [ref=e458]: Samuel Smackie Makwecha
+                - generic [ref=e459]:
+                  - generic [ref=e460]: £11,051
+                  - generic [ref=e461]: Samuel Smackie Makwecha
+                - generic [ref=e462]:
+                  - generic [ref=e463]:
+                    - img [ref=e464]
+                    - generic [ref=e466]: Your World
+                  - generic [ref=e467]:
+                    - img [ref=e468]
+                    - generic [ref=e472]: Admin
+                  - generic [ref=e473]:
+                    - img [ref=e474]
+                    - generic [ref=e476]: 2d ago
+            - generic [ref=e478] [cursor=pointer]:
+              - generic [ref=e480]: ⠿
+              - generic [ref=e481]:
+                - paragraph [ref=e482]: Mosunmola Deborah Molokwu
+                - generic [ref=e483]:
+                  - generic [ref=e484]: £18,531
+                  - generic [ref=e485]: Mosunmola Deborah Molokwu
+                - generic [ref=e486]:
+                  - generic [ref=e487]:
+                    - img [ref=e488]
+                    - generic [ref=e490]: Your World
+                  - generic [ref=e491]:
+                    - img [ref=e492]
+                    - generic [ref=e496]: Admin
+                  - generic [ref=e497]:
+                    - img [ref=e498]
+                    - generic [ref=e500]: 2d ago
+            - generic [ref=e502] [cursor=pointer]:
+              - generic [ref=e504]: ⠿
+              - generic [ref=e505]:
+                - paragraph [ref=e506]: Vishnudev Ramoo
+                - generic [ref=e507]:
+                  - generic [ref=e508]: £21,516
+                  - generic [ref=e509]: Vishnudev Ramoo
+                - generic [ref=e510]:
+                  - generic [ref=e511]:
+                    - img [ref=e512]
+                    - generic [ref=e514]: Your World
+                  - generic [ref=e515]:
+                    - img [ref=e516]
+                    - generic [ref=e520]: Admin
+                  - generic [ref=e521]:
+                    - img [ref=e522]
+                    - generic [ref=e524]: 2d ago
+        - generic [ref=e525]:
+          - generic [ref=e526]:
+            - generic [ref=e527]:
+              - generic [ref=e528]: ✍️
+              - generic [ref=e529]: Doc Signed
+            - generic [ref=e531]: "3"
+          - generic [ref=e532]: £52,470 total TSV
+          - generic [ref=e533]:
+            - generic [ref=e535] [cursor=pointer]:
+              - generic [ref=e537]: ⠿
+              - generic [ref=e538]:
+                - paragraph [ref=e539]: Diego Sevilla Medinilla
+                - generic [ref=e540]:
+                  - generic [ref=e541]: £23,651
+                  - generic [ref=e542]: Diego Sevilla Medinilla
+                - generic [ref=e543]:
+                  - generic [ref=e544]:
+                    - img [ref=e545]
+                    - generic [ref=e547]: Day webster
+                  - generic [ref=e548]:
+                    - img [ref=e549]
+                    - generic [ref=e553]: Admin
+                  - generic [ref=e554]:
+                    - img [ref=e555]
+                    - generic [ref=e557]: 2d ago
+            - generic [ref=e559] [cursor=pointer]:
+              - generic [ref=e561]: ⠿
+              - generic [ref=e562]:
+                - paragraph [ref=e563]: Danielle Shanks
+                - generic [ref=e564]:
+                  - generic [ref=e565]: £23,280
+                  - generic [ref=e566]: Danielle Shanks
+                - generic [ref=e567]:
+                  - generic [ref=e568]:
+                    - img [ref=e569]
+                    - generic [ref=e571]: Your World
+                  - generic [ref=e572]:
+                    - img [ref=e573]
+                    - generic [ref=e577]: Admin
+                  - generic [ref=e578]:
+                    - img [ref=e579]
+                    - generic [ref=e581]: 2d ago
+            - generic [ref=e583] [cursor=pointer]:
+              - generic [ref=e585]: ⠿
+              - generic [ref=e586]:
+                - paragraph [ref=e587]: Susana Noorali Amlani
+                - generic [ref=e588]:
+                  - generic [ref=e589]: £5,539
+                  - generic [ref=e590]: Susana Noorali Amlani
+                - generic [ref=e591]:
+                  - generic [ref=e592]:
+                    - img [ref=e593]
+                    - generic [ref=e595]: Your World
+                  - generic [ref=e596]:
+                    - img [ref=e597]
+                    - generic [ref=e601]: Admin
+                  - generic [ref=e602]:
+                    - img [ref=e603]
+                    - generic [ref=e605]: 2d ago
+        - generic [ref=e606]:
+          - generic [ref=e607]:
+            - generic [ref=e608]:
+              - generic [ref=e609]: ✅
+              - generic [ref=e610]: Compliant
+            - generic [ref=e612]: "3"
+          - generic [ref=e613]: £47,956 total TSV
+          - generic [ref=e614]:
+            - generic [ref=e616] [cursor=pointer]:
+              - generic [ref=e618]: ⠿
+              - generic [ref=e619]:
+                - paragraph [ref=e620]: ISHAQ IBRAHIM
+                - generic [ref=e621]:
+                  - generic [ref=e622]: £22,888
+                  - generic [ref=e623]: ISHAQ IBRAHIM
+                - generic [ref=e624]:
+                  - generic [ref=e625]:
+                    - img [ref=e626]
+                    - generic [ref=e628]: Day webster
+                  - generic [ref=e629]:
+                    - img [ref=e630]
+                    - generic [ref=e634]: Admin
+                  - generic [ref=e635]:
+                    - img [ref=e636]
+                    - generic [ref=e638]: 2d ago
+            - generic [ref=e640] [cursor=pointer]:
+              - generic [ref=e642]: ⠿
+              - generic [ref=e643]:
+                - paragraph [ref=e644]: Gloria Nickels
+                - generic [ref=e645]:
+                  - generic [ref=e646]: £9,951
+                  - generic [ref=e647]: Gloria Nickels
+                - generic [ref=e648]:
+                  - generic [ref=e649]:
+                    - img [ref=e650]
+                    - generic [ref=e652]: Your World
+                  - generic [ref=e653]:
+                    - img [ref=e654]
+                    - generic [ref=e658]: Admin
+                  - generic [ref=e659]:
+                    - img [ref=e660]
+                    - generic [ref=e662]: 2d ago
+            - generic [ref=e664] [cursor=pointer]:
+              - generic [ref=e666]: ⠿
+              - generic [ref=e667]:
+                - paragraph [ref=e668]: Baki Kilinc
+                - generic [ref=e669]:
+                  - generic [ref=e670]: £15,117
+                  - generic [ref=e671]: Baki Kilinc
+                - generic [ref=e672]:
+                  - generic [ref=e673]:
+                    - img [ref=e674]
+                    - generic [ref=e676]: Your World
+                  - generic [ref=e677]:
+                    - img [ref=e678]
+                    - generic [ref=e682]: Admin
+                  - generic [ref=e683]:
+                    - img [ref=e684]
+                    - generic [ref=e686]: 2d ago
+        - generic [ref=e687]:
+          - generic [ref=e688]:
+            - generic [ref=e689]:
+              - generic [ref=e690]: 💳
+              - generic [ref=e691]: Ready for Payment
+            - generic [ref=e693]: "0"
+          - generic [ref=e694]: £0 total TSV
+          - generic [ref=e696]:
+            - img [ref=e697]
+            - paragraph [ref=e699]: No deals
+            - paragraph [ref=e700]: Drop here to move
+        - generic [ref=e701]:
+          - generic [ref=e702]:
+            - generic [ref=e703]:
+              - generic [ref=e704]: 💰
+              - generic [ref=e705]: Paid
+            - generic [ref=e707]: "0"
+          - generic [ref=e708]: £0 total TSV
+          - generic [ref=e710]:
+            - img [ref=e711]
+            - paragraph [ref=e713]: No deals
+            - paragraph [ref=e714]: Drop here to move
+  - generic:
+    - status
