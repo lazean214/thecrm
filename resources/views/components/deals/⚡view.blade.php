@@ -183,7 +183,7 @@ new class extends Component {
         }
 
         if ($user->isSalesTeam()) {
-            return $this->deals->user_id === $user->id;
+            return (int) $this->deals->user_id === $user->id;
         }
 
         return true;
