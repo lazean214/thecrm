@@ -440,7 +440,7 @@ new class extends Component {
         $oldStage = $deal->stage->value;
 
         // Authorization
-        if ($user->isSalesTeam() && $deal->user_id !== $user->id) {
+        if ($user->isSalesTeam() && (int) $deal->user_id !== $user->id) {
             $this->dispatch('error', message: 'You can only edit your own deals');
 
             return;

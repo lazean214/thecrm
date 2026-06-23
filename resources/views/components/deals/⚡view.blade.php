@@ -105,7 +105,7 @@ new class extends Component {
         $this->loadDeal();
 
         $user = auth()->user();
-        if ($user && $user->isSalesTeam() && $this->deals->user_id !== $user->id) {
+        if ($user && $user->isSalesTeam() && (int) $this->deals->user_id !== $user->id) {
             abort(403, 'You are not authorised to view this deal.');
         }
     }
