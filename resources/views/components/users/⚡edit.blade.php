@@ -69,7 +69,7 @@ new class extends Component
 
         $this->user->update($updateData);
         $this->user->teams()->sync($this->selectedTeams);
-        $this->user->syncRoles($this->selectedRoles);
+        $this->user->syncRoles(Role::whereIn('id', $this->selectedRoles)->pluck('name')->toArray());
 
         $this->showModal = false;
         $this->dispatch('userUpdated');
