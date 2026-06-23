@@ -76,7 +76,7 @@ class Deal extends Model implements HasMedia
         return $this->belongsToMany(
             Company::class,
             'company_deal'
-        )->withPivot('is_primary');
+        )->withPivot('is_primary', 'agency_deal_value', 'margin_agreed');
     }
 
     public function primaryContact(): ?Contact
