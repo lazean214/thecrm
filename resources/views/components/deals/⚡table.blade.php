@@ -94,6 +94,11 @@ new class extends Component {
     public bool $showConfirmModal = false;
     public string $confirmMessage = '';
 
+    // ── Permission Modal State ─────────────────────────
+    public bool $showPermissionModal = false;
+    public string $restrictedDealName = '';
+    public string $restrictedStageName = '';
+
     // ── Deferred Lookups ────────────────────────────────
     public array $allUsers = [];
     public array $allCompanies = [];
@@ -718,6 +723,24 @@ new class extends Component {
         $this->showConfirmModal = false;
     }
 
+    // ─────────────────────────────────────────────────────
+    // PERMISSION MODAL
+    // ─────────────────────────────────────────────────────
+
+    public function showPermissionModal(string $dealName, string $stageName): void
+    {
+        $this->restrictedDealName = $dealName;
+        $this->restrictedStageName = $stageName;
+        $this->showPermissionModal = true;
+    }
+
+    public function closePermissionModal(): void
+    {
+        $this->showPermissionModal = false;
+        $this->restrictedDealName = '';
+        $this->restrictedStageName = '';
+    }
+
     public function confirmBatchAction(): void
     {
         match ($this->batchOperation) {
@@ -1308,6 +1331,71 @@ new class extends Component {
                         <button wire:click="confirmBatchAction" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">Confirm</button>
                     @endif
                 </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Permission Modal --}}
+    @if ($showPermissionModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" x-data="{ show: @entangle('showPermissionModal') }">
+            {{-- Backdrop --}}
+            <div
+                class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                wire:click="closePermissionModal"
+                x-on:click="show = false"
+            ></div>
+
+            {{-- Modal Content --}}
+            <div
+                class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6"
+                @click.stop
+            >
+                {{-- Lock Icon --}}
+                <div class="flex justify-center mb-5">
+                    <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                {{-- Title --}}
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white text-center mb-3">
+                    Access Restricted
+                </h3>
+
+                {{-- Dynamic Message --}}
+                <div class="text-center mb-5">
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                        You don't have permission to move deals to the
+                    </p>
+                    <p class="text-base font-semibold text-slate-800 dark:text-slate-200">
+                        {{ $restrictedStageName }}
+                    </p>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                        for deal: <span class="font-medium text-slate-700 dark:text-slate-300">{{ $restrictedDealName }}</span>
+                    </p>
+                </div>
+
+                {{-- Info Box --}}
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-6">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                            Only the Compliance Team can manage deals in payment-related stages.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Close Button --}}
+                <button
+                    wire:click="closePermissionModal"
+                    class="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+                >
+                    Understood
+                </button>
             </div>
         </div>
     @endif

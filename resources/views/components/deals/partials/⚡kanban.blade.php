@@ -169,6 +169,7 @@
             </template>
         </div>
     </template>
+
 </div>
 
 <script>
@@ -370,11 +371,25 @@
                     return;
                 }
 
-                this.onDragEnd();
-
                 // Find the deal
                 const deal = this.findDeal(dealId);
-                if (!deal) return;
+                if (!deal) {
+                    this.onDragEnd();
+                    return;
+                }
+
+                // Check permission BEFORE allowing drop
+                // canEditStage returns true for editable (unrestricted) stages
+                // Show modal when trying to move to a restricted stage (!canEditStage)
+                if (!this.canEditStage(targetStage)) {
+                    // Call Livewire method to show the permission modal
+                    const stageName = this.stageConfig[targetStage]?.label || targetStage;
+                    this.$wire.showPermissionModal(deal.name, stageName);
+                    this.onDragEnd();
+                    return;
+                }
+
+                this.onDragEnd();
 
                 // Optimistic update - move locally first
                 this.moveDealLocally(dealId, fromStage, targetStage);
