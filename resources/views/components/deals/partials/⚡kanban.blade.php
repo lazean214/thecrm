@@ -78,7 +78,7 @@
                 <template x-for="deal in getDealsByStage(stage)" :key="deal.id">
                     <div :data-deal-id="deal.id" class="transition-transform duration-200"
                         :draggable="canEditStage(stage)"
-                        @dragstart="onDragStart(deal.id, stage, $event)" @dragend="onDragEnd()">
+                        @dragstart="onDragStart(deal.id, stage, $event)" @dragend="onDragEnd()" @drag="onDrag($event)">
 
                         {{-- Card --}}
                         <div class="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
@@ -437,6 +437,45 @@
                 this.draggingId = null;
                 this.draggingStage = null;
                 this.dragOverStage = null;
+                this.stopAutoScroll();
+            },
+
+            // Auto-scroll when dragging near viewport edges
+            scrollInterval: null,
+
+            onDrag(event) {
+                if (!this.draggingId) return;
+
+                const edgeThreshold = 80; // px from viewport edge to start scrolling
+                const scrollSpeed = 10; // px per interval
+                const scrollInterval = 15; // ms between scrolls
+
+                const clientX = event.clientX;
+                const viewportWidth = window.innerWidth;
+
+                // Clear any existing interval
+                this.stopAutoScroll();
+
+                if (clientX < edgeThreshold) {
+                    // Scroll left
+                    this.scrollInterval = setInterval(() => {
+                        const board = this.$el;
+                        board.scrollLeft -= scrollSpeed;
+                    }, scrollInterval);
+                } else if (clientX > viewportWidth - edgeThreshold) {
+                    // Scroll right
+                    this.scrollInterval = setInterval(() => {
+                        const board = this.$el;
+                        board.scrollLeft += scrollSpeed;
+                    }, scrollInterval);
+                }
+            },
+
+            stopAutoScroll() {
+                if (this.scrollInterval) {
+                    clearInterval(this.scrollInterval);
+                    this.scrollInterval = null;
+                }
             },
         };
     }

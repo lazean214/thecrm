@@ -28,8 +28,9 @@ new class extends Component
                     ];
 
                     $isActive = $currentStage === $listStage->value;
-                    $isCompleted = $index < $currentStageIndex;
-                    $isUpcoming = $index > $currentStageIndex;
+                    // When stage is 'lost', don't mark other stages as completed - they remain pending
+                    $isCompleted = $currentStage !== 'lost' && $index < $currentStageIndex;
+                    $isUpcoming = $index > $currentStageIndex || $currentStage === 'lost';
                     $canMove = ! $isActive && $this->canChangeStage($listStage->value);
                 @endphp
 
