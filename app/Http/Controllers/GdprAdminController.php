@@ -81,10 +81,26 @@ class GdprAdminController extends Controller
 
         $content = json_decode($request->file('settings_file')->get(), true);
 
+        // Whitelist allowed fields to prevent mass assignment attacks
+        $allowedFields = ['entity_type', 'retention_months', 'is_enabled', 'custom_action'];
+
         foreach ($content as $setting) {
+            // Validate required field
+            if (empty($setting['entity_type'])) {
+                continue;
+            }
+
+            // Filter to only allowed fields
+            $filteredSetting = [
+                'entity_type' => $setting['entity_type'],
+                'retention_months' => $setting['retention_months'] ?? 12,
+                'is_enabled' => $setting['is_enabled'] ?? false,
+                'custom_action' => $setting['custom_action'] ?? 'anonymize',
+            ];
+
             GdprSetting::updateOrCreate(
-                ['entity_type' => $setting['entity_type']],
-                $setting
+                ['entity_type' => $filteredSetting['entity_type']],
+                $filteredSetting
             );
         }
 

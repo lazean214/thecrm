@@ -9,4 +9,5 @@ enum DealStage: string
     case COMPLIANT = 'compliant';
     case READY_FOR_PAYMENT = 'ready for payment';
     case PAID = 'paid';
+    case LOST = 'lost';
 }

@@ -14,16 +14,23 @@ class DealController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return DealResource::collection(Deal::paginate(25));
+        $user = auth()->user();
+
+        // Sales Team users only see their own deals
+        $deals = Deal::query()
+            ->visibleTo($user)
+            ->with(['contacts', 'companies', 'user'])
+            ->paginate(25);
+
+        return DealResource::collection($deals);
     }
 
     public function store(StoreDealRequest $request): DealResource
     {
         $data = $request->validated();
 
-        if (! isset($data['user_id'])) {
-            $data['user_id'] = $request->user()?->id;
-        }
+        // Force ownership to authenticated user - prevent user_id injection
+        $data['user_id'] = $request->user()->id;
 
         $deal = Deal::create($data);
 
@@ -32,6 +39,13 @@ class DealController extends Controller
 
     public function show(Deal $deal): DealResource
     {
+        $user = auth()->user();
+
+        // Authorization check
+        if ($user->isSalesTeam() && $deal->user_id !== $user->id) {
+            abort(403, 'You do not have permission to view this deal.');
+        }
+
         $deal->load(['contacts', 'companies', 'user']);
 
         return new DealResource($deal);
@@ -39,6 +53,13 @@ class DealController extends Controller
 
     public function update(UpdateDealRequest $request, Deal $deal): DealResource
     {
+        $user = $request->user();
+
+        // Authorization check
+        if ($user->isSalesTeam() && $deal->user_id !== $user->id) {
+            abort(403, 'You do not have permission to update this deal.');
+        }
+
         $deal->update($request->validated());
 
         return new DealResource($deal);
@@ -46,6 +67,13 @@ class DealController extends Controller
 
     public function destroy(Deal $deal): Response
     {
+        $user = auth()->user();
+
+        // Only Admin can delete deals
+        if (! $user->isAdmin()) {
+            abort(403, 'Only administrators can delete deals.');
+        }
+
         $deal->delete();
 
         return response()->noContent();

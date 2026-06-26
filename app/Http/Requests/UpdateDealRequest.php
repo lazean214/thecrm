@@ -35,7 +35,6 @@ class UpdateDealRequest extends FormRequest
             'date_set_up' => ['sometimes', 'nullable', 'date'],
             'remittance_received' => ['sometimes', 'nullable', 'boolean'],
             'date_logged' => ['sometimes', 'nullable', 'date'],
-            'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'starter_checklist_recieved_date' => ['sometimes', 'nullable', 'date'],
             'starter_form' => ['sometimes', 'nullable', 'string', 'max:255'],
             'tax_code' => ['sometimes', 'nullable', 'string', 'max:50'],

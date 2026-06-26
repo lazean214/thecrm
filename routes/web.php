@@ -4,6 +4,7 @@ use App\Http\Controllers\DealController;
 use App\Http\Controllers\DealExportController;
 use App\Http\Controllers\GdprAdminController;
 use App\Http\Controllers\GdprController;
+use App\Http\Controllers\SignableEnvelopeController;
 use App\Imports\CompanyImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +33,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
-// /api/webhooks/signable
+// Signable Webhook - verify signature before processing
+Route::post('/api/webhooks/signable', [SignableEnvelopeController::class, 'handle'])
+    ->middleware('signable.webhook')
+    ->name('webhooks.signable');
+
+// Company Import
 Route::post('/import-companies', function (Request $request) {
     $request->validate(['file' => 'required|file|mimes:csv,xlsx,xls|max:10240']);
     try {

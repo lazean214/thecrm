@@ -9,7 +9,7 @@ use Modules\Signable\App\Http\Controllers\Api\SignableTemplateController;
 use Modules\Signable\App\Http\Controllers\Api\SignableUserController;
 use Modules\Signable\App\Http\Controllers\Api\SignableWebhookController;
 
-Route::middleware('api')->prefix('api/signable')->group(function (): void {
+Route::middleware(['api', 'auth:sanctum'])->prefix('api/signable')->group(function (): void {
     // Envelopes
     Route::get('envelopes', [SignableEnvelopeController::class, 'index']);
     Route::post('envelopes', [SignableEnvelopeController::class, 'store']);

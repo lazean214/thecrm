@@ -14,18 +14,39 @@ class UserController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return UserResource::collection(User::paginate(25));
+        // Only Admin can list all users
+        $user = auth()->user();
+
+        if (! $user->isAdmin()) {
+            abort(403, 'Only administrators can list users.');
+        }
+
+        return UserResource::collection(User::with(['teams', 'deals'])->paginate(25));
     }
 
     public function store(StoreUserRequest $request): UserResource
     {
-        $user = User::create($request->validated());
+        $user = $request->user();
 
-        return new UserResource($user);
+        // Only Admin can create users
+        if (! $user->isAdmin()) {
+            abort(403, 'Only administrators can create users.');
+        }
+
+        $newUser = User::create($request->validated());
+
+        return new UserResource($newUser);
     }
 
     public function show(User $user): UserResource
     {
+        $authUser = auth()->user();
+
+        // Users can view their own profile, Admins can view all
+        if ($authUser->id !== $user->id && ! $authUser->isAdmin()) {
+            abort(403, 'You do not have permission to view this user.');
+        }
+
         $user->load(['teams', 'deals']);
 
         return new UserResource($user);
@@ -33,6 +54,20 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): UserResource
     {
+        $authUser = $request->user();
+
+        // Users can update their own profile (limited fields)
+        if ($authUser->id === $user->id) {
+            $user->update($request->validated());
+
+            return new UserResource($user);
+        }
+
+        // Only Admin can update other users
+        if (! $authUser->isAdmin()) {
+            abort(403, 'You do not have permission to update this user.');
+        }
+
         $user->update($request->validated());
 
         return new UserResource($user);
@@ -40,6 +75,18 @@ class UserController extends Controller
 
     public function destroy(User $user): Response
     {
+        $authUser = auth()->user();
+
+        // Users cannot delete themselves
+        if ($authUser->id === $user->id) {
+            abort(403, 'You cannot delete your own account.');
+        }
+
+        // Only Admin can delete users
+        if (! $authUser->isAdmin()) {
+            abort(403, 'Only administrators can delete users.');
+        }
+
         $user->delete();
 
         return response()->noContent();

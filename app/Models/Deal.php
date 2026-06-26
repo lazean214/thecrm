@@ -119,7 +119,8 @@ class Deal extends Model implements HasMedia
             return $query;
         }
 
-        if ($user->isSalesTeam()) {
+        // Admin can see all deals, Sales Team can only see their own
+        if ($user->isSalesTeam() && ! $user->isAdmin()) {
             return $query->where(
                 'user_id',
                 $user->id

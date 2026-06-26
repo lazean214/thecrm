@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\Deals\KanbanController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function (): void {
     Route::apiResource('contacts', ContactController::class)->names('api.contacts');
     Route::apiResource('deals', DealController::class)->names('api.deals');
     Route::apiResource('users', UserController::class)->names('api.users');

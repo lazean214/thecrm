@@ -96,7 +96,7 @@ new class extends Component {
     {
         $this->dealId = $dealId;
 
-        $this->stages = [DealStage::DOC_SENT, DealStage::DOC_SIGNED, DealStage::COMPLIANT, DealStage::READY_FOR_PAYMENT, DealStage::PAID];
+        $this->stages = [DealStage::DOC_SENT, DealStage::DOC_SIGNED, DealStage::COMPLIANT, DealStage::READY_FOR_PAYMENT, DealStage::PAID, DealStage::LOST];
 
         $this->internalCompanies = InternalCompanies::all();
 
@@ -578,6 +578,13 @@ new class extends Component {
             'accentText' => '#14532d',
             'icon' => '💰',
             'label' => 'Paid',
+        ],
+        'lost' => [
+            'accent' => '#dc2626',
+            'accentLight' => 'rgba(220,38,38,0.12)',
+            'accentText' => '#991b1b',
+            'icon' => '❌',
+            'label' => 'Lost',
         ],
     ];
 @endphp

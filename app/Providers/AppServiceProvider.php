@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\User;
 use App\Observers\DealObserver;
+use App\Policies\ContactPolicy;
+use App\Policies\DealPolicy;
+use App\Policies\UserPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -32,12 +36,23 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiting();
+        $this->registerPolicies();
         Deal::observe(DealObserver::class);
 
         // Authorize Pulse dashboard access
         Gate::define('viewPulse', function (User $user) {
             return $user->isAdmin() || $user->isComplianceTeam();
         });
+    }
+
+    /**
+     * Register policies for authorization.
+     */
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Deal::class, DealPolicy::class);
+        Gate::policy(Contact::class, ContactPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 
     /**

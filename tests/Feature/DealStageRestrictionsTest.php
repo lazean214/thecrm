@@ -91,10 +91,11 @@ test('user with no team can move to all stages', function () {
     }
 });
 
-test('getAllowedDealStages returns 3 stages for sales user', function () {
+test('getAllowedDealStages returns 4 stages for sales user', function () {
     $user = createSalesUser();
 
-    expect($user->getAllowedDealStages())->toHaveCount(3);
+    expect($user->getAllowedDealStages())->toHaveCount(4);
+    expect($user->canMoveToStage(DealStage::LOST->value))->toBeTrue();
 });
 
 // ─────────────────────────────────────────────

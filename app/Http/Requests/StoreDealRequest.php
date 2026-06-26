@@ -35,7 +35,6 @@ class StoreDealRequest extends FormRequest
             'date_set_up' => ['nullable', 'date'],
             'remittance_received' => ['nullable', 'boolean'],
             'date_logged' => ['nullable', 'date'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'starter_checklist_recieved_date' => ['nullable', 'date'],
             'starter_form' => ['nullable', 'string', 'max:255'],
             'tax_code' => ['nullable', 'string', 'max:50'],

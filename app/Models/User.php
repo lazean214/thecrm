@@ -127,6 +127,7 @@ class User extends Authenticatable implements PasskeyUser
                 DealStage::DOC_SENT->value,
                 DealStage::DOC_SIGNED->value,
                 DealStage::COMPLIANT->value,
+                DealStage::LOST->value,
             ];
         }
 

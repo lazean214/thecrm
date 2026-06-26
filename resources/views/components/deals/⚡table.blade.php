@@ -1239,6 +1239,7 @@ new class extends Component {
                     'compliant' => ['accent' => '#4ed386', 'accentLight' => 'rgba(217,119,6,0.12)', 'accentText' => '#1b8b41', 'icon' => '✅', 'label' => 'Compliant'],
                     'ready for payment' => ['accent' => '#ea580c', 'accentLight' => 'rgba(234,88,12,0.12)', 'accentText' => '#9a3412', 'icon' => '💳', 'label' => 'Ready for Payment'],
                     'paid' => ['accent' => '#16a34a', 'accentLight' => 'rgba(22,163,74,0.12)', 'accentText' => '#14532d', 'icon' => '💰', 'label' => 'Paid'],
+                    'lost' => ['accent' => '#dc2626', 'accentLight' => 'rgba(220,38,38,0.12)', 'accentText' => '#991b1b', 'icon' => '❌', 'label' => 'Lost'],
                 ];
             @endphp
             @include('components.deals.partials.⚡kanban', [
@@ -1260,6 +1261,7 @@ new class extends Component {
                     'compliant' => ['accent' => '#4ed386', 'accentLight' => 'rgba(217,119,6,0.12)', 'accentText' => '#1b8b41', 'icon' => '✅', 'label' => 'Compliant'],
                     'ready for payment' => ['accent' => '#ea580c', 'accentLight' => 'rgba(234,88,12,0.12)', 'accentText' => '#9a3412', 'icon' => '💳', 'label' => 'Ready for Payment'],
                     'paid' => ['accent' => '#16a34a', 'accentLight' => 'rgba(22,163,74,0.12)', 'accentText' => '#14532d', 'icon' => '💰', 'label' => 'Paid'],
+                    'lost' => ['accent' => '#dc2626', 'accentLight' => 'rgba(220,38,38,0.12)', 'accentText' => '#991b1b', 'icon' => '❌', 'label' => 'Lost'],
                 ];
             @endphp
             @include('components.deals.partials.⚡table-view', [
@@ -1297,7 +1299,7 @@ new class extends Component {
                             $stageLabels = [
                                 'doc sent' => 'Doc Sent', 'doc signed' => 'Doc Signed',
                                 'compliant' => 'Compliant', 'ready for payment' => 'Ready for Payment',
-                                'paid' => 'Paid',
+                                'paid' => 'Paid', 'lost' => 'Lost',
                             ];
                         @endphp
                         @foreach ($stages as $s)

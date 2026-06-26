@@ -9,4 +9,9 @@ return [
         'secret' => env('SIGNABLE_API_SECRET', 'x'),
         'timeout' => (int) env('SIGNABLE_API_TIMEOUT', 30),
     ],
+
+    'webhook' => [
+        // Secret for verifying incoming webhook signatures
+        'secret' => env('SIGNABLE_WEBHOOK_SECRET'),
+    ],
 ];
