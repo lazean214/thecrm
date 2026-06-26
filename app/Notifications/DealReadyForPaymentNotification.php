@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Deal;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class DealReadyForPaymentNotification extends Notification
@@ -17,20 +16,7 @@ class DealReadyForPaymentNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $amount = number_format((float) $this->deal->amount, 2);
-
-        return (new MailMessage)
-            ->subject("Payment Ready: {$this->deal->name}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("Your deal **{$this->deal->name}** is now ready for payment.")
-            ->line("**Amount:** £{$amount}")
-            ->action('View Deal', route('deals.show', $this->deal->id))
-            ->line('Please proceed with the payment at your earliest convenience.');
+        return ['database'];
     }
 
     public function toDatabase(object $notifiable): array

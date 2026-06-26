@@ -9,13 +9,4 @@
 
         </div>
     </div>
-
-    <script>
-        window.dispatchEvent(new CustomEvent('realtime-new-deal', {
-            detail: {
-                deal: event.data, // or event.data.deal depending on your structure
-                target_user_id: event.data.target_user_id
-            }
-        }));
-    </script>
 </x-layouts::app>

@@ -74,7 +74,7 @@ new class extends Component {
 };
 ?>
 
-<div x-data="{ open: false }" class="relative" wire:poll.30s="refreshNotifications">
+<div x-data="{ open: false }" class="relative" wire:poll.60s="refreshNotifications">
     {{-- Bell --}}
     <button @click="open = !open" class="relative">
         <flux:icon.bell class="w-5 h-5" />

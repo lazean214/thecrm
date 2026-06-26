@@ -65,10 +65,7 @@ new class extends Component
         // }
     }
 
-    // 3. ✅ Instantly alert the Notification Dropdown Bell Component
-    $this->dispatch('notification-updated');
-
-    // 4. Handle email template actions if it was an email item
+    // 3. Handle email template actions if it was an email item
     if ($this->type === 'email') {
         $deal = $deal ?? Deal::find($this->dealId);
 

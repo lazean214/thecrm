@@ -12,7 +12,7 @@
     stageConfig: {{ Js::from($stageConfig) }},
     isSalesUser: {{ $isSalesUser ? 'true' : 'false' }},
     editableStages: {{ Js::from($editableStages) }},
-})" x-init="init()" @realtime-new-deal.window="handleNewDeal($event)"
+})" x-init="init()"
     class="flex gap-3 overflow-x-auto overflow-y-hidden pb-4 px-2 min-h-[650px] snap-x snap-mandatory scrollbar-thin">
 
     <template x-for="stage in stages" :key="stage">
@@ -283,25 +283,6 @@
             saveState() {
                 if (Object.keys(this.kanbanData).length > 0) {
                     writeCache(this.kanbanData);
-                }
-            },
-
-            handleNewDeal(event) {
-                const detail = event.detail;
-                if (detail.target_user_id != {{ auth()->id() }}) return;
-                const newDeal = detail.deal || detail;
-
-                // Add to correct stage
-                const stage = newDeal.stage;
-                if (!this.kanbanData[stage]) {
-                    this.kanbanData[stage] = { deals: [], count: 0, total_amount: 0 };
-                }
-
-                const stageData = this.kanbanData[stage];
-                if (!stageData.deals.some(d => d.id === newDeal.id)) {
-                    stageData.deals.unshift(newDeal);
-                    stageData.count = (stageData.count || 0) + 1;
-                    this.saveState();
                 }
             },
 

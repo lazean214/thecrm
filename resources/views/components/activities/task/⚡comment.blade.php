@@ -79,9 +79,6 @@ new class extends Component
         // }
     }
 
-    // Always dispatch the refresh event so your UI stays synchronized
-    $this->dispatch('notification-updated');
-
     $this->reset('comment');
     $this->showForm = false;
     unset($this->activity, $this->comments);
@@ -129,9 +126,6 @@ new class extends Component
             
             // }
         }
-
-        // Always dispatch the refresh event so your UI stays synchronized
-        $this->dispatch('notification-updated');
 
         $this->replyingToId = null;
         $this->replyComment = '';
