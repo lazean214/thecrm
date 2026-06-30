@@ -18,12 +18,14 @@ class DealEmailLog extends Model
         'status',
         'sent_at',
         'error_message',
+        'attachments',
     ];
 
     protected function casts(): array
     {
         return [
             'sent_at' => 'datetime',
+            'attachments' => 'array',
         ];
     }
 

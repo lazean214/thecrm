@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Illuminate\Http\UploadedFile;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Modules\Signable\App\Services\Signable\SignableClient;
@@ -9,6 +10,12 @@ use Modules\Signable\App\Services\Signable\SignableClient;
 class SignableEnvelopeForm extends Component
 {
     use WithFileUploads;
+
+    /**
+     * Maximum file size for upload (10MB).
+     * Adjust based on Signable API limits.
+     */
+    private const MAX_FILE_SIZE_MB = 10;
 
     public $deal;
 
@@ -38,6 +45,18 @@ class SignableEnvelopeForm extends Component
 
     public $status_type = '';
 
+    protected function rules(): array
+    {
+        return [
+            'document_file' => [
+                'nullable',
+                'file',
+                'max:'.(self::MAX_FILE_SIZE_MB * 1024), // Max file size in KB
+                'mimes:pdf,doc,docx', // Only allow document types
+            ],
+        ];
+    }
+
     public function mount(SignableClient $signable)
     {
         $this->available_templates = $signable->listTemplates()->json('templates') ?? [];
@@ -45,6 +64,8 @@ class SignableEnvelopeForm extends Component
 
     public function sendEnvelope(SignableClient $signable)
     {
+        $this->validate();
+
         $payload = [
             'envelope_title' => $this->envelope_title,
             'envelope_all_at_once_enabled' => $this->envelope_all_at_once_enabled,
@@ -52,11 +73,12 @@ class SignableEnvelopeForm extends Component
             'envelope_auto_remind_hours' => $this->envelope_auto_remind_hours,
             'envelope_parties' => $this->envelope_parties,
         ];
-        if ($this->document_source === 'upload') {
+
+        if ($this->document_source === 'upload' && $this->document_file) {
             $payload['envelope_documents'] = [[
                 'document_title' => $this->document_title,
                 'file_name' => $this->document_file->getClientOriginalName(),
-                'file_content' => base64_encode(file_get_contents($this->document_file->getRealPath())),
+                'file_content' => $this->encodeFileToBase64($this->document_file),
             ]];
         } elseif (count($this->selected_templates) > 0) {
             $payload['envelope_documents'] = array_map(function ($tpl) {
@@ -66,7 +88,9 @@ class SignableEnvelopeForm extends Component
                 ];
             }, $this->selected_templates);
         }
+
         $response = $signable->sendEnvelope($payload);
+
         if ($response->successful()) {
             $this->status_type = 'success';
             $this->status_message = 'Envelope sent!';
@@ -74,6 +98,35 @@ class SignableEnvelopeForm extends Component
             $this->status_type = 'error';
             $this->status_message = $response->json('message') ?? 'Failed to send envelope.';
         }
+    }
+
+    /**
+     * Encode file to base64 using streaming to avoid memory issues.
+     * For files larger than 8MB, uses chunked reading.
+     */
+    private function encodeFileToBase64(UploadedFile $file): string
+    {
+        $path = $file->getRealPath();
+        $handle = fopen($path, 'rb');
+        $contents = '';
+
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to open file: '.$path);
+        }
+
+        // Read in chunks to avoid memory issues with large files
+        while (! feof($handle)) {
+            $chunk = fread($handle, 8192); // 8KB chunks
+            if ($chunk === false) {
+                fclose($handle);
+                throw new \RuntimeException('Failed to read file chunk');
+            }
+            $contents .= $chunk;
+        }
+
+        fclose($handle);
+
+        return base64_encode($contents);
     }
 
     public function render()

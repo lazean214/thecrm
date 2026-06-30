@@ -164,7 +164,7 @@ new class extends Component
 
         $this->attachments = [];
 
-        session()->flash('success', 'Email sent successfully.');
+        session()->flash('success', 'Email queued and will be sent shortly.');
     }
 };
 ?>
@@ -484,8 +484,13 @@ new class extends Component
                                     class="shrink-0 rounded-full px-2 py-1 text-xs font-medium
                                     @if ($email->status === 'sent') bg-emerald-100 text-emerald-700
                                     @elseif ($email->status === 'failed') bg-red-100 text-red-700
+                                    @elseif ($email->status === 'pending') bg-blue-100 text-blue-700
                                     @else bg-amber-100 text-amber-700 @endif">
-                                    {{ ucfirst($email->status) }}
+                                    @if ($email->status === 'pending')
+                                        Queued
+                                    @else
+                                        {{ ucfirst($email->status) }}
+                                    @endif
                                 </span>
 
                             </div>

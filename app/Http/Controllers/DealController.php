@@ -8,7 +8,8 @@ class DealController extends Controller
 {
     public function show($deal)
     {
-        $deal = Deal::with(['contacts', 'companies'])->findOrFail($deal);
+        $deal = Deal::with(['contacts', 'companies', 'user', 'primaryContactRelation', 'primaryCompanyRelation'])
+            ->findOrFail($deal);
 
         return view('deals.show', compact('deal'));
     }

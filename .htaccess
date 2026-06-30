@@ -1,0 +1,11 @@
+# Block access to sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block access to Laravel files
+<FilesMatch "^(artisan|composer\.(json|lock)|webpack\.mix\.js|package\.(json|lock))$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

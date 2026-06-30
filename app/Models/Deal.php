@@ -79,20 +79,79 @@ class Deal extends Model implements HasMedia
         )->withPivot('is_primary', 'agency_deal_value', 'margin_agreed');
     }
 
-    public function primaryContact(): ?Contact
+    /**
+     * Get primary contact - use the accessor below.
+     * This relationship is used for eager loading.
+     */
+    public function primaryContactRelation(): BelongsToMany
     {
         return $this->contacts()
-            ->wherePivot('is_primary', true)
-            ->first()
-            ?? $this->contacts()->first();
+            ->wherePivot('is_primary', true);
     }
 
-    public function primaryCompany(): ?Company
+    /**
+     * Get primary contact with fallback to first contact.
+     * Access via: $deal->primaryContact
+     */
+    public function getPrimaryContactAttribute(): ?Contact
+    {
+        $primary = $this->primaryContactRelation()->first();
+
+        return $primary ?? $this->contacts()->first();
+    }
+
+    /**
+     * Get primary company - use the accessor below.
+     * This relationship is used for eager loading.
+     */
+    public function primaryCompanyRelation(): BelongsToMany
     {
         return $this->companies()
-            ->wherePivot('is_primary', true)
-            ->first()
-            ?? $this->companies()->first();
+            ->wherePivot('is_primary', true);
+    }
+
+    /**
+     * Get primary company with fallback to first company.
+     * Access via: $deal->primaryCompany
+     */
+    public function getPrimaryCompanyAttribute(): ?Company
+    {
+        $primary = $this->primaryCompanyRelation()->first();
+
+        return $primary ?? $this->companies()->first();
+    }
+
+    /**
+     * Eager load primary contact using subquery to avoid N+1.
+     * Usage: Deal::withPrimaryContact()->get()
+     */
+    public function scopeWithPrimaryContact(Builder $query): Builder
+    {
+        return $query->with([
+            'contacts' => fn ($q) => $q->wherePivot('is_primary', true)
+                ->select('contacts.id', 'contacts.first_name', 'contacts.last_name', 'contacts.email'),
+        ]);
+    }
+
+    /**
+     * Eager load primary company using subquery to avoid N+1.
+     * Usage: Deal::withPrimaryCompany()->get()
+     */
+    public function scopeWithPrimaryCompany(Builder $query): Builder
+    {
+        return $query->with([
+            'companies' => fn ($q) => $q->wherePivot('is_primary', true)
+                ->select('companies.id', 'companies.name'),
+        ]);
+    }
+
+    /**
+     * Eager load primary contact and company to avoid N+1.
+     * Usage: Deal::withPrimaryRelations()->get()
+     */
+    public function scopeWithPrimaryRelations(Builder $query): Builder
+    {
+        return $query->withPrimaryContact()->withPrimaryCompany();
     }
 
     public function emailLogs(): HasMany

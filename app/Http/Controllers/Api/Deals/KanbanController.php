@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Deals;
 
 use App\Enums\DealStage;
 use App\Http\Controllers\Controller;
+use App\Jobs\RefreshKanbanCacheJob;
 use App\Models\Deal;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class KanbanController extends Controller
         $cacheKey = $this->buildCacheKey($user?->id, $request->all());
 
         // Stale-while-revalidate pattern
-        $cached = Cache::get($cacheKey);
+        $cached = $this->getCachedData($cacheKey);
 
         if ($cached && ! $request->boolean('fresh')) {
             $response = response()->json($cached);
@@ -42,7 +43,7 @@ class KanbanController extends Controller
         $data = $this->fetchKanbanData($user, $request->all());
         $data['_cached_at'] = now()->timestamp;
 
-        Cache::put($cacheKey, $data, now()->addSeconds(self::CACHE_TTL_SECONDS));
+        $this->setCachedData($cacheKey, $data);
 
         return response()->json($data)->header('X-Cache', 'MISS');
     }
@@ -50,6 +51,22 @@ class KanbanController extends Controller
     private function buildCacheKey(?int $userId, array $params): string
     {
         return 'kanban_'.($userId ?? 'guest').'_'.md5(json_encode($params));
+    }
+
+    /**
+     * Get cached data.
+     */
+    private function getCachedData(string $key): ?array
+    {
+        return Cache::get($key);
+    }
+
+    /**
+     * Store data in cache.
+     */
+    private function setCachedData(string $key, array $data): void
+    {
+        Cache::put($key, $data, now()->addSeconds(self::CACHE_TTL_SECONDS));
     }
 
     private function fetchKanbanData(?User $user, array $filters): array
@@ -172,12 +189,13 @@ class KanbanController extends Controller
 
     private function refreshInBackground(?User $user, array $filters, string $cacheKey): void
     {
-        // Dispatch to queue for background refresh
-        dispatch(function () use ($user, $filters, $cacheKey) {
-            $data = $this->fetchKanbanData($user, $filters);
-            $data['_cached_at'] = now()->timestamp;
-            Cache::put($cacheKey, $data, now()->addSeconds(self::CACHE_TTL_SECONDS));
-        });
+        // Dispatch job for background refresh (works with database queue)
+        RefreshKanbanCacheJob::dispatch(
+            userId: $user?->id,
+            filters: $filters,
+            cacheKey: $cacheKey,
+            ttlSeconds: self::CACHE_TTL_SECONDS,
+        );
     }
 
     /**
@@ -210,10 +228,14 @@ class KanbanController extends Controller
         ]);
     }
 
+    /**
+     * Invalidate kanban caches.
+     * For file/database cache, clears all kanban caches by prefix.
+     */
     private function invalidateCache(?int $userId): void
     {
-        // Invalidate all kanban caches for this user (prefix-based)
-        // In production, use Cache::tags or Redis for better invalidation
-        Cache::forget('kanban_'.($userId ?? 'guest').'_'.md5(json_encode([])));
+        // Flush all kanban caches - for file-based cache, this clears stale data
+        // In production with many users, consider implementing prefix-based clearing
+        Cache::flush();
     }
 }

@@ -59,5 +59,10 @@ Thumbs.db
 # CRM Automation
 crm-automation/
 
+# Production audit (internal)
+PRODUCTION_AUDIT.md
+ARCHITECTURE_SCALING_AUDIT.md
+DEPLOYMENT_GUIDE.md
+
 # Sensitive company data (contains real company names)
 app/Enums/InternalCompany.php

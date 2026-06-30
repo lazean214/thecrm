@@ -1,29 +1,32 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schedule;
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;
 use Symfony\Component\Mime\Address;
-use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('send-mail', function () {
-    $email = (new MailtrapEmail())
-        ->from(new Address('noreply@naicatech.com', 'The CRM'))
+    $email = (new MailtrapEmail)
+        ->from(new Address(
+            env('MAIL_FROM_ADDRESS', 'noreply@example.com'),
+            env('MAIL_FROM_NAME', 'The CRM')
+        ))
         ->to(new Address('ncs.it02@outlook.com'))
         ->subject('You are awesome!')
-        ->text('Congrats for sending test email with Mailtrap!')
-    ;
+        ->text('Congrats for sending test email with Mailtrap!');
 
     $response = MailtrapClient::initSendingEmails(
-        apiKey: '76226dca9a847a0b796ee1e1868948b1'
+        apiKey: env('MAILTRAP_API_KEY')
     )->send($email);
 
     var_dump(ResponseHelper::toArray($response));
 })->purpose('Send Mail via API');
 
 Artisan::command('test-mail', function () {
-    \Illuminate\Support\Facades\Mail::raw('Test email from The CRM via SMTP', function ($m) {
+    Mail::raw('Test email from The CRM via SMTP', function ($m) {
         $m->to('ncs.it02@outlook.com')->subject('SMTP Test');
     });
     $this->info('Email sent!');

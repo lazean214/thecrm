@@ -41,7 +41,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // URL is handled by StorageController::serve route
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

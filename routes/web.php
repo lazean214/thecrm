@@ -5,12 +5,18 @@ use App\Http\Controllers\DealExportController;
 use App\Http\Controllers\GdprAdminController;
 use App\Http\Controllers\GdprController;
 use App\Http\Controllers\SignableEnvelopeController;
+use App\Http\Controllers\StorageController;
 use App\Imports\CompanyImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
 
 Route::view('/', 'welcome')->name('home');
+
+// Serve files from storage without needing storage:link (shared hosting compatible)
+Route::get('storage/{path}', [StorageController::class, 'serve'])
+    ->where('path', '.*')
+    ->middleware('auth');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');

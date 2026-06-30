@@ -43,7 +43,7 @@ return [
     |
     */
 
-    'enabled' => env('PULSE_ENABLED', true),
+    'enabled' => env('PULSE_ENABLED', false),  // Set to true only if needed (high memory usage)
 
     /*
     |--------------------------------------------------------------------------
