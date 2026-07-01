@@ -59,11 +59,6 @@
                             {{ __('GDPR Compliance') }}
                         </flux:sidebar.item>
                     @endcan
-                    @can('viewPulse')
-                        <flux:sidebar.item icon="chart-bar" :href="route('pulse')" :current="request()->routeIs('pulse')" wire:navigate>
-                            {{ __('Pulse') }}
-                        </flux:sidebar.item>
-                    @endcan
                 </flux:sidebar.group>
                 @endcan
 

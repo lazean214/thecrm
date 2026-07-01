@@ -39,10 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerPolicies();
         Deal::observe(DealObserver::class);
 
-        // Authorize Pulse dashboard access
-        Gate::define('viewPulse', function (User $user) {
-            return $user->isAdmin() || $user->isComplianceTeam();
-        });
+        
     }
 
     /**

@@ -478,6 +478,11 @@ new class extends Component {
             return;
         }
 
+        // Guard against missing stage keys (e.g. after cache invalidation)
+        if (! isset($this->kanbanData[$fromStage]) || ! isset($this->kanbanData[$toStage])) {
+            return;
+        }
+
         // Find and remove from old stage
         $deal = null;
         foreach ($this->kanbanData[$fromStage]['deals'] as $d) {
@@ -506,7 +511,8 @@ new class extends Component {
 
     private function invalidateKanbanCache(): void
     {
-        unset($this->kanbanCached);
+        $this->kanbanData = [];
+        Cache::forget($this->kanbanCacheKey());
     }
 
     // ─────────────────────────────────────────────────────

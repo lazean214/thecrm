@@ -63,6 +63,6 @@ crm-automation/
 PRODUCTION_AUDIT.md
 ARCHITECTURE_SCALING_AUDIT.md
 DEPLOYMENT_GUIDE.md
-
+PRODUCTION_AUDIT_UPDATED.md
 # Sensitive company data (contains real company names)
 app/Enums/InternalCompany.php

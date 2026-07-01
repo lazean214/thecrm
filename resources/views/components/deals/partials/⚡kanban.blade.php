@@ -75,10 +75,10 @@
                     </div>
                 </template>
 
-                <template x-for="deal in getDealsByStage(stage)" :key="deal.id">
-                    <div :data-deal-id="deal.id" class="transition-transform duration-200"
-                        :draggable="canEditStage(stage)"
-                        @dragstart="onDragStart(deal.id, stage, $event)" @dragend="onDragEnd()" @drag="onDrag($event)">
+                 <template x-for="deal in getDealsByStage(stage)" :key="deal.id">
+                     <div :id="'kanban-card-' + deal.id" class="transition-transform duration-200 relative"
+                         :draggable="canEditStage(stage)"
+                         @dragstart="onDragStart(deal.id, stage, $event)" @dragend="onDragEnd()" @drag="onDrag($event)">
 
                         {{-- Card --}}
                         <div class="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
@@ -239,6 +239,7 @@
             stages,
             stageConfig,
             isSalesUser,
+            isComplianceUser: !isSalesUser,
             editableStages: new Set(editableStages),
             draggingId: null,
             draggingStage: null,
@@ -316,10 +317,24 @@
                 return new Date(dateStr).toLocaleDateString('en-GB');
             },
 
+            // Context menu state
+            contextMenu: null,
+
+
+
             handleCardClick(event, dealId) {
                 if (event.target.closest('a')) return;
                 if (this.draggingId) return;
                 window.location.href = `/deals/${dealId}`;
+            },
+
+            handleContextMenuAction(action, deal, stage = null) {
+                this.hideCardContextMenu();
+                this.$wire.$set('contextMenuAction', {
+                    action: action,
+                    deal: deal,
+                    stage: stage
+                });
             },
 
             onDragStart(dealId, stage, event) {
@@ -480,3 +495,32 @@
         };
     }
 </script>
+
+@pushOnce('scripts')
+<script>
+    // Global escape key listener for context menus
+    function initGlobalContextMenuHandlers() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Find all visible context menus and hide them
+                document.querySelectorAll('[x-show="contextMenu"]').forEach(el => {
+                    if (el._x_isShown) {
+                        // Find the Alpine component and call hideCardContextMenu
+                        const component = el.__x;
+                        if (component) {
+                            component.hideCardContextMenu();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGlobalContextMenuHandlers);
+    } else {
+        initGlobalContextMenuHandlers();
+    }
+</script>
+@endpushOnce
