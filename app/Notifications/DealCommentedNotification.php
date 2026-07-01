@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\ActivityLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class DealCommentedNotification extends Notification
 {

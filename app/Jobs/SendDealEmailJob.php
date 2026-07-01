@@ -31,11 +31,6 @@ class SendDealEmailJob implements ShouldQueue
      */
     public array $backoff = [10, 30, 60];
 
-    /**
-     * Unique ID for idempotency - prevents duplicate sends on retry.
-     */
-    private string $idempotencyKey;
-
     public function __construct(
         public int $logId,
         public array $attachments = [],
