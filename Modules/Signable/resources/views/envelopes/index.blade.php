@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envelope Desk</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=sora:400,500,600,700|jetbrains-mono:400,500" rel="stylesheet" />
-    <link prefetch href="https://api.signable.co.uk/v1" onload="this.onload=null;">
+<x-layouts::app title="Envelopes">
     <style>
         :root {
             --ink: #131b24;
@@ -20,23 +12,6 @@
             --danger: #b42318;
             --glow-a: #9fe8d9;
             --glow-b: #ffd3a9;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Sora', sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(1000px 380px at 10% -12%, var(--glow-a), transparent 55%),
-                radial-gradient(900px 360px at 94% -15%, var(--glow-b), transparent 54%),
-                var(--paper);
-            min-height: 100%;
         }
 
         .shell {
@@ -349,8 +324,7 @@
             }
         }
     </style>
-</head>
-<body>
+
 <div class="shell">
     <section class="hero">
         <div class="hero-top">
@@ -1324,5 +1298,5 @@
     loadEnvelopes();
 })();
 </script>
-</body>
-</html>
+</div>
+</x-layouts::app>
