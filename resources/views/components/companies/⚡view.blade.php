@@ -113,7 +113,9 @@ new class extends Component {
                 <ul class="space-y-2">
                     @forelse($company->deals as $deal)
                         <li class="rounded-lg bg-slate-50 px-4 py-3">
-                            <div class="font-medium text-slate-900">{{ $deal->name }}</div>
+                            <div class="font-medium">
+                                <a href="{{ route('deals.show', $deal) }}" class="text-indigo-600 hover:underline">{{ $deal->name }}</a>
+                            </div>
                             <div class="mt-1 text-sm text-slate-500">
                                 Deal Owner: {{ $deal->user?->name ?? 'Unknown owner' }}
                             </div>
@@ -128,8 +130,10 @@ new class extends Component {
                 <h2 class="mb-4 text-xl font-bold">Associated Contacts</h2>
                 <ul class="space-y-2">
                     @forelse($company->contacts as $contact)
-                        <li class="rounded-lg bg-slate-50 px-4 py-3 text-slate-900">{{ $contact->first_name }}
-                            {{ $contact->last_name }}</li>
+                        <li class="rounded-lg bg-slate-50 px-4 py-3">
+                            <a href="{{ route('contacts.show', $contact) }}" class="font-medium text-indigo-600 hover:underline">{{ $contact->first_name }}
+                                {{ $contact->last_name }}</a>
+                        </li>
                     @empty
                         <li class="rounded-lg bg-slate-50 px-4 py-3 text-slate-500">No contacts linked.</li>
                     @endforelse

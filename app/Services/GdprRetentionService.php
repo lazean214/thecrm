@@ -2,13 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\Contact;
 use App\Models\DealEmailLog;
+use App\Models\DealHistory;
 use App\Models\GdprSetting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class GdprRetentionService
 {
@@ -79,6 +82,50 @@ class GdprRetentionService
         return $count;
     }
 
+    public function anonymiseExpiredActivityLogs(): int
+    {
+        $setting = GdprSetting::getRetentionFor('activity_logs');
+        if (! $setting || ! $setting->is_enabled) {
+            return 0;
+        }
+
+        $expiryDate = Carbon::now()->subMonths($setting->retention_months);
+
+        $count = ActivityLog::whereNull('anonymised_at')
+            ->where('created_at', '<', $expiryDate)
+            ->update([
+                'user_email' => null,
+                'message' => '[anonymised]',
+                'anonymised_at' => now(),
+            ]);
+
+        Log::info("GDPR: Anonymised {$count} activity logs (retention: {$setting->retention_months} months)");
+
+        return $count;
+    }
+
+    public function anonymiseExpiredDealHistories(): int
+    {
+        $setting = GdprSetting::getRetentionFor('deal_histories');
+        if (! $setting || ! $setting->is_enabled) {
+            return 0;
+        }
+
+        $expiryDate = Carbon::now()->subMonths($setting->retention_months);
+
+        $count = DealHistory::where('created_at', '<', $expiryDate)
+            ->update([
+                'old_value' => null,
+                'new_value' => null,
+                'details' => '[anonymised]',
+                'metadata' => null,
+            ]);
+
+        Log::info("GDPR: Anonymised {$count} deal histories (retention: {$setting->retention_months} months)");
+
+        return $count;
+    }
+
     public function getStatistics(): array
     {
         return [
@@ -95,6 +142,17 @@ class GdprRetentionService
             'email_logs' => [
                 'total' => DealEmailLog::count(),
                 'retention_enabled' => GdprSetting::getRetentionFor('email_logs')?->is_enabled ?? false,
+            ],
+            'activity_logs' => [
+                'total' => ActivityLog::count(),
+                'anonymised' => Schema::hasColumn('activity_logs', 'anonymised_at')
+                    ? ActivityLog::whereNotNull('anonymised_at')->count()
+                    : 0,
+                'retention_enabled' => GdprSetting::getRetentionFor('activity_logs')?->is_enabled ?? false,
+            ],
+            'deal_histories' => [
+                'total' => DealHistory::count(),
+                'retention_enabled' => GdprSetting::getRetentionFor('deal_histories')?->is_enabled ?? false,
             ],
         ];
     }

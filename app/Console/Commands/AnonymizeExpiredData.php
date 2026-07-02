@@ -18,6 +18,15 @@ class AnonymizeExpiredData extends Command
         $anonymized = $retentionService->anonymizeExpiredContacts();
         $this->info("Anonymized {$anonymized} contacts.");
 
+        $deleted = $retentionService->deleteExpiredEmailLogs();
+        $this->info("Deleted {$deleted} email logs.");
+
+        $anonymisedLogs = $retentionService->anonymiseExpiredActivityLogs();
+        $this->info("Anonymised {$anonymisedLogs} activity logs.");
+
+        $anonymisedHistories = $retentionService->anonymiseExpiredDealHistories();
+        $this->info("Anonymised {$anonymisedHistories} deal histories.");
+
         $scheduled = $retentionService->scheduleSoftDeletionForInactiveUsers();
         $this->info("Marked {$scheduled} users for future deletion.");
 

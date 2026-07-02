@@ -534,7 +534,7 @@ new class extends Component {
 
             $this->dispatch('notify', type: 'success', message: 'Document deleted successfully.');
         } catch (\Throwable $e) {
-            logger()->error($e);
+            logger()->error('Media delete failed: ' . $e->getMessage());
             $this->dispatch('notify', type: 'error', message: $e->getMessage());
         }
     }

@@ -343,11 +343,13 @@ new class extends Component
 
         /**
          * ----------------------------------------------------
-         * DEBUG LOG
+         * DEBUG LOG (non-PII fields only)
          * ----------------------------------------------------
          */
         logger()->info('SIGNABLE PAYLOAD', [
-            'payload' => $payload
+            'envelope_title' => $payload['envelope_title'] ?? null,
+            'document_count' => count($payload['envelope_documents'] ?? []),
+            'party_count' => count($payload['envelope_parties'] ?? []),
         ]);
 
         /**
@@ -418,9 +420,6 @@ new class extends Component
                 [
                     'status' =>
                         $response->status(),
-
-                    'payload' =>
-                        $payload,
 
                     'response' =>
                         $responseBody,

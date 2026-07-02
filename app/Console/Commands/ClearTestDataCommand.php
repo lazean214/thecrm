@@ -104,7 +104,7 @@ class ClearTestDataCommand extends Command
         foreach ($preserveEmails as $email) {
             $user = User::where('email', $email)->first();
             if ($user) {
-                $this->info("  - {$email} ({$user->name})");
+                $this->info("  - {$email}");
             }
         }
 

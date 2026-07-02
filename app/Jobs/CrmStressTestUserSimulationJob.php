@@ -67,7 +67,7 @@ class CrmStressTestUserSimulationJob implements ShouldQueue
             return;
         }
 
-        $this->logInfo("User {$user->name} starting simulation");
+        $this->logInfo("User {$user->id} starting simulation");
 
         // Perform multiple actions per simulation
         $actionCount = random_int(3, 8);
@@ -78,7 +78,7 @@ class CrmStressTestUserSimulationJob implements ShouldQueue
         $endTime = microtime(true);
         $duration = ($endTime - $startTime) * 1000;
 
-        $this->logInfo("User {$user->name} completed simulation in {$duration}ms");
+        $this->logInfo("User {$user->id} completed simulation in {$duration}ms");
         $this->recordMetrics($duration);
     }
 
