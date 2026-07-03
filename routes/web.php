@@ -59,7 +59,7 @@ Route::post('/import-companies', function (Request $request) {
     } catch (Exception $e) {
         return back()->with('error', '❌ '.$e->getMessage());
     }
-})->name('import.companies');
+})->middleware('auth')->name('import.companies');
 
 // routes/web.php
 Route::middleware(['auth'])->group(function () {
