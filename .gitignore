@@ -59,6 +59,9 @@ Thumbs.db
 # CRM Automation
 crm-automation/
 
+# Browser simulation screenshots
+tests/BrowserSimulation/screenshots/*.png
+
 # Production audit (internal)
 PRODUCTION_AUDIT.md
 ARCHITECTURE_SCALING_AUDIT.md

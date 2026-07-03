@@ -39,6 +39,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
+require __DIR__.'/simulation.php';
+
 // Signable Webhook - verify signature before processing
 Route::post('/api/webhooks/signable', [SignableEnvelopeController::class, 'handle'])
     ->middleware('signable.webhook')
