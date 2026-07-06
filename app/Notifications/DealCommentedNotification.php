@@ -3,7 +3,9 @@
 namespace App\Notifications;
 
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
@@ -17,7 +19,24 @@ class DealCommentedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable instanceof User && $notifiable->wantsEmailNotification('deal_commented')) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $typeLabel = $this->comment->activity_name ?? 'Comment';
+
+        return (new MailMessage)
+            ->subject("New {$typeLabel} Received")
+            ->line($this->comment->user_email.' commented:')
+            ->line(Str::limit($this->comment->message, 200))
+            ->action('View Deal', url("/deals/{$this->comment->deal_id}"));
     }
 
     /**

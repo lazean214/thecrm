@@ -3,7 +3,9 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class DealInactiveNotification extends Notification
@@ -16,7 +18,21 @@ class DealInactiveNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable instanceof User && $notifiable->wantsEmailNotification('deal_inactive')) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject("Inactive Deal: {$this->deal->name}")
+            ->line("Deal {$this->deal->name} ({$this->deal->stage?->value}) has not been updated in over 24 hours.")
+            ->action('View Deal', route('deals.show', $this->deal->id));
     }
 
     public function toDatabase(object $notifiable): array

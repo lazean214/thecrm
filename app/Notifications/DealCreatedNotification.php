@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Models\User;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class DealCreatedNotification extends Notification
@@ -13,7 +15,21 @@ class DealCreatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable instanceof User && $notifiable->wantsEmailNotification('deal_created')) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject("New Deal Created: {$this->deal->name}")
+            ->line("A new deal '{$this->deal->name}' has been created by {$this->deal->user->name}.")
+            ->action('View Deal', route('deals.show', $this->deal));
     }
 
     /**
