@@ -37,6 +37,9 @@
                     <flux:sidebar.item icon="pencil-square" :href="route('designer')" :current="request()->routeIs('designer*')" wire:navigate>
                         {{ __('Email Designer') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="chart-bar-square" :href="route('reports')" :current="request()->routeIs('reports')" wire:navigate>
+                        {{ __('Reports') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 @can('view-users')

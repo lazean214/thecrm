@@ -12,7 +12,9 @@ use Livewire\Component;
 class DataManagement extends Component
 {
     public int $dealsCount = 0;
+
     public int $contactsCount = 0;
+
     public int $companiesCount = 0;
 
     public function mount(): void

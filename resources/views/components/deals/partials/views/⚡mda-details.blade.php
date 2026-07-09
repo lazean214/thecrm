@@ -4,17 +4,6 @@
     <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex justify-between items-center">
         MDA
         <span class="flex items-center gap-2">
-            <button wire:click="syncToMDA" wire:loading.attr="disabled"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed transition shadow-sm">
-                <span wire:loading.remove wire:target="syncToMDA">Sync to MDA</span>
-                <span wire:loading.flex wire:target="syncToMDA" class="items-center gap-1">
-                    <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"></path>
-                    </svg>
-                    Syncing...
-                </span>
-            </button>
             <button @click="expanded = !expanded"
                 class="group inline-flex items-center justify-center rounded-lg p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg"

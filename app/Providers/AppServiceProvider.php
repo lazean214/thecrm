@@ -39,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
         $this->registerPolicies();
         Deal::observe(DealObserver::class);
 
-        
     }
 
     /**

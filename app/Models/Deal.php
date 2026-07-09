@@ -89,17 +89,19 @@ class Deal extends Model implements HasMedia
             ->wherePivot('is_primary', true);
     }
 
-public function primaryContact(): ?Contact
-{
-    $primary = $this->primaryContactRelation()->first();
-    return $primary ?? $this->contacts()->first();
-}
+    public function primaryContact(): ?Contact
+    {
+        $primary = $this->primaryContactRelation()->first();
 
-public function primaryCompany(): ?Company
-{
-    $primary = $this->primaryCompanyRelation()->first();
-    return $primary ?? $this->companies()->first();
-}
+        return $primary ?? $this->contacts()->first();
+    }
+
+    public function primaryCompany(): ?Company
+    {
+        $primary = $this->primaryCompanyRelation()->first();
+
+        return $primary ?? $this->companies()->first();
+    }
 
     /**
      * Get primary contact with fallback to first contact.

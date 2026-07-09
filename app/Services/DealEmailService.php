@@ -8,7 +8,6 @@ use App\Models\Deal;
 use App\Models\DealEmailLog;
 use App\Models\EmailTemplate;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Throwable;

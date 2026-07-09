@@ -44,7 +44,7 @@ class SendDealEmailJob implements ShouldQueue
     {
         // Idempotency check - skip if already processed
         if ($this->idempotencyKey && $this->alreadyProcessed()) {
-            Log::info("SendDealEmailJob: Skipping duplicate job", [
+            Log::info('SendDealEmailJob: Skipping duplicate job', [
                 'log_id' => $this->logId,
                 'idempotency_key' => $this->idempotencyKey,
             ]);
@@ -55,14 +55,14 @@ class SendDealEmailJob implements ShouldQueue
         $log = DealEmailLog::find($this->logId);
 
         if (! $log) {
-            Log::warning("SendDealEmailJob: Log not found", ['log_id' => $this->logId]);
+            Log::warning('SendDealEmailJob: Log not found', ['log_id' => $this->logId]);
 
             return;
         }
 
         // Skip if already sent
         if ($log->status === 'sent') {
-            Log::info("SendDealEmailJob: Email already sent", ['log_id' => $this->logId]);
+            Log::info('SendDealEmailJob: Email already sent', ['log_id' => $this->logId]);
 
             return;
         }
@@ -89,7 +89,7 @@ class SendDealEmailJob implements ShouldQueue
             // Mark as processed for idempotency
             $this->markAsProcessed();
 
-            Log::info("SendDealEmailJob: Email sent successfully", ['log_id' => $this->logId]);
+            Log::info('SendDealEmailJob: Email sent successfully', ['log_id' => $this->logId]);
 
         } catch (Throwable $e) {
             $log->update([
@@ -97,7 +97,7 @@ class SendDealEmailJob implements ShouldQueue
                 'error_message' => $e->getMessage(),
             ]);
 
-            Log::error("SendDealEmailJob: Email failed", [
+            Log::error('SendDealEmailJob: Email failed', [
                 'log_id' => $this->logId,
                 'error' => $e->getMessage(),
             ]);
@@ -120,7 +120,7 @@ class SendDealEmailJob implements ShouldQueue
             ]);
         }
 
-        Log::error("SendDealEmailJob: Job failed permanently", [
+        Log::error('SendDealEmailJob: Job failed permanently', [
             'log_id' => $this->logId,
             'error' => $exception?->getMessage(),
         ]);

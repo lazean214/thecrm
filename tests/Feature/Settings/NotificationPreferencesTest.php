@@ -1,10 +1,9 @@
 <?php
 
-use App\Livewire\Settings\Notifications;
 use App\Models\User;
-use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('wantsEmailNotification returns correct values', function () {
     $user = User::factory()->create([

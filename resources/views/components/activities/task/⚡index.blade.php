@@ -4,8 +4,9 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\Deal;
 use App\Models\ActivityLog;
-use App\Services\DealEmailService;
+use App\Mail\DealEmailMailable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 new class extends Component {
     public ?int $dealId = null;
@@ -14,7 +15,6 @@ new class extends Component {
     public string $activityName = '';
     public string $message = '';
     public string $userEmail = '';
-    public ?int $emailTemplateId = 2;
 
     public function mount(?int $dealId = null): void
     {
@@ -35,7 +35,6 @@ new class extends Component {
             'activityName' => 'required|string|max:255',
             'message' => 'nullable|string',
             'userEmail' => 'required|email',
-            'emailTemplateId' => 'required|integer|exists:email_templates,id',
         ]);
 
         $status = in_array($this->type, ['tasks', 'todo']) ? 'pending' : null;
@@ -62,11 +61,13 @@ new class extends Component {
             // }
         }
 
-        // 3. Handle email template actions if it was an email item
+        // 3. Send direct email if it was an email item
         if ($this->type === 'email') {
-            $deal = $deal ?? Deal::find($this->dealId);
-
-            DealEmailService::send(deal: $deal, templateId: $this->emailTemplateId, to: $this->userEmail, customSubject: $this->activityName ?: null, customBody: $this->message ?: null);
+            try {
+                Mail::to($this->userEmail)->send(new DealEmailMailable(subjectLine: $this->activityName, bodyContent: $this->message ?: 'No message provided.', isHtml: false, emailAttachments: []));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send activity email: ' . $e->getMessage());
+            }
         }
 
         // 5. Reset inputs
@@ -112,17 +113,10 @@ new class extends Component {
                     placeholder="{{ $type === 'email' ? 'Subject' : 'Activity Name' }}" />
             </div>
 
-            <div class="flex gap-4 mb-4">
+            <div class="mb-4">
                 <input wire:model="userEmail" type="email"
                     class="block w-full pl-4 pr-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition"
                     placeholder="Recipient email" />
-                <select wire:model="emailTemplateId"
-                    class="block w-full pl-4 pr-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition">
-                    <option value="">Select template…</option>
-                    @foreach (\App\Models\EmailTemplate::all() as $template)
-                        <option value="{{ $template->id }}">{{ $template->name }}</option>
-                    @endforeach
-                </select>
             </div>
 
             <textarea wire:model="message"

@@ -449,81 +449,6 @@ new class extends Component {
         session()->flash('info', 'Changes discarded.');
     }
 
-    public function syncToMDA(): void
-    {
-        if (!$this->canEdit()) {
-            $this->dispatch('notify', type: 'error', message: 'You can only edit your own deals.');
-
-            return;
-        }
-
-        $contact = $this->contacts->first();
-
-        if (!$contact || !$contact->email) {
-            $this->dispatch('notify', type: 'error', message: 'A contact with email is required to sync to MDA.');
-
-            return;
-        }
-
-        if (empty($this->mda_setup)) {
-            $this->dispatch('notify', type: 'error', message: 'Please select an MDA Setup before syncing.');
-
-            return;
-        }
-
-        try {
-            // Map internal company name to MDA company ID
-            $mdaCompanyId = $this->getMdaCompanyId($this->mda_setup);
-
-            if (!$mdaCompanyId) {
-                $this->dispatch('notify', type: 'error', message: 'Could not find MDA company configuration.');
-
-                return;
-            }
-
-            // Prepare employee data from deal/contact
-            $employeeData = [
-                'company_id' => $mdaCompanyId,
-                'first_name' => $contact->first_name,
-                'last_name' => $contact->last_name,
-                'email' => $contact->email,
-                'phone' => $contact->phone,
-            ];
-
-            // Create or update employee via MDA API
-            $action = app(\Modules\MyDigitalAccounts\Actions\CreateEmployeeAction::class);
-            $result = $action->execute($employeeData);
-
-            // Store the MDA employee ID as reference number
-            $this->deals->update(['mda_reference_number' => $result->id]);
-            $this->mda_reference_number = $result->id;
-
-            // Log the activity
-            $this->deals->logFieldUpdate(
-                'mda_sync',
-                'new',
-                $mdaCompanyId,
-                'Synced to MDA: ' . $contact->first_name . ' ' . $contact->last_name,
-            );
-
-            $this->dispatch('notify', type: 'success', message: 'Employee synced to MDA successfully.');
-        } catch (\Throwable $e) {
-            logger()->error('MDA sync failed: ' . $e->getMessage());
-
-            $this->dispatch('notify', type: 'error', message: 'Failed to sync to MDA. Please try again.');
-        }
-    }
-
-    /**
-     * Get MDA company ID from internal company name
-     */
-    private function getMdaCompanyId(string $internalCompanyName): ?string
-    {
-        $mapping = config('internal_companies.mda_company_mapping', []);
-
-        return $mapping[$internalCompanyName] ?? null;
-    }
-
     public function deleteMedia(int $mediaId): void
     {
         try {
@@ -601,6 +526,8 @@ new class extends Component {
     </div>
 
     @include('components.deals.partials.views.⚡stage-navigator')
+
+    @livewire('deals.ai-action-prompts', ['dealId' => $deals->id ?? null], key('ai-actions-'.$deals->id))
 
     <div class="flex flex-wrap">
         <aside class="w-2/6 mb-24">

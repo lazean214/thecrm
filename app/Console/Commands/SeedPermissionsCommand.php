@@ -26,8 +26,8 @@ class SeedPermissionsCommand extends Command
         $this->newLine();
 
         // Run the seeders
-        $this->call('db:seed', ['--class' => \Database\Seeders\RoleSeeder::class, '--force' => true]);
-        $this->call('db:seed', ['--class' => \Database\Seeders\PermissionSeeder::class, '--force' => true]);
+        $this->call('db:seed', ['--class' => RoleSeeder::class, '--force' => true]);
+        $this->call('db:seed', ['--class' => PermissionSeeder::class, '--force' => true]);
 
         // Verify
         $roles = Role::count();
