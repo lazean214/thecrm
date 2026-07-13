@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API Setup Key
+    |--------------------------------------------------------------------------
+    |
+    | Used for one-time setup of external API clients. Set a secure random key
+    | via API_SETUP_KEY environment variable before first use.
+    |
+    */
+
+    'api_setup_key' => env('API_SETUP_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

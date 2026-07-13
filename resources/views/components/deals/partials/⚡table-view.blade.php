@@ -221,6 +221,10 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
                         Created</th>
                 @endif
+                @if ($hasCol('updated_at'))
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
+                        Last Modified</th>
+                @endif
 
                 {{-- Actions (always visible) --}}
                 <th class="w-10 px-3 py-3"></th>
@@ -419,6 +423,12 @@
                     @if ($hasCol('created_at'))
                         <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
                             {{ \Carbon\Carbon::parse($deal['created_at'])->format('d M Y') }}
+                        </td>
+                    @endif
+
+                    @if ($hasCol('updated_at'))
+                        <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                            {{ \Carbon\Carbon::parse($deal['updated_at'])->format('d M Y') }}
                         </td>
                     @endif
 

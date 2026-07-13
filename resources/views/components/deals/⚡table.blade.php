@@ -72,6 +72,7 @@ new class extends Component {
         'date_set_up' => ['label' => 'Date Set Up', 'group' => 'Deal'],
         'tax_code' => ['label' => 'Tax Code', 'group' => 'Deal'],
         'created_at' => ['label' => 'Created', 'group' => 'Deal'],
+        'updated_at' => ['label' => 'Last Modified', 'group' => 'Deal'],
         'owner' => ['label' => 'Owner', 'group' => 'Owner'],
         'owner_email' => ['label' => 'Owner Email', 'group' => 'Owner'],
         'contact' => ['label' => 'Contact', 'group' => 'Contact'],
@@ -116,9 +117,7 @@ new class extends Component {
 
         // Use paginate for total count
         $query = $this->buildTableQuery();
-        $paginated = $query
-            ->latest('updated_at')
-            ->paginate($this->perPage);
+        $paginated = $query->latest('updated_at')->paginate($this->perPage);
 
         $this->totalDeals = $paginated->total();
         $this->totalPages = max(1, (int) ceil($this->totalDeals / $this->perPage));
@@ -128,7 +127,7 @@ new class extends Component {
 
         $this->hasMorePages = $paginated->hasMorePages();
 
-        return collect($paginated->items())->map(fn ($d) => $this->serializeDealFull($d))->all();
+        return collect($paginated->items())->map(fn($d) => $this->serializeDealFull($d))->all();
     }
 
     // ─────────────────────────────────────────────────────
@@ -137,19 +136,25 @@ new class extends Component {
 
     public function mount(): void
     {
-        $this->stages = array_map(fn ($s) => $s->value, DealStage::cases());
+        $this->stages = array_map(fn($s) => $s->value, DealStage::cases());
 
         // Load lookups eagerly so they're available for Alpine autocomplete
-        $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
-        $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
+        $this->allUsers = User::orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->toArray();
+        $this->allCompanies = Company::orderBy('name')
+            ->get(['id', 'name'])
+            ->toArray();
         $this->allContacts = Contact::orderBy('first_name')
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => trim($c->first_name . ' ' . $c->last_name),
-                'first_name' => $c->first_name,
-                'last_name' => $c->last_name,
-            ])
+            ->map(
+                fn($c) => [
+                    'id' => $c->id,
+                    'name' => trim($c->first_name . ' ' . $c->last_name),
+                    'first_name' => $c->first_name,
+                    'last_name' => $c->last_name,
+                ],
+            )
             ->toArray();
         $this->lookupsLoaded = true;
 
@@ -186,7 +191,7 @@ new class extends Component {
         $cached = Cache::get($cacheKey);
 
         // Use cached data if available (max 30 seconds stale)
-        if ($cached && isset($cached['stages']) && ! $this->hasActiveFilters()) {
+        if ($cached && isset($cached['stages']) && !$this->hasActiveFilters()) {
             $this->kanbanData = $cached['stages'];
             $staleAge = isset($cached['cached_at']) ? now()->timestamp - $cached['cached_at'] : 999;
 
@@ -209,17 +214,23 @@ new class extends Component {
     #[On('loadLookups')]
     public function loadLookups(): void
     {
-        if (! $this->lookupsLoaded) {
-            $this->allUsers = User::orderBy('name')->get(['id', 'name', 'email'])->toArray();
-            $this->allCompanies = Company::orderBy('name')->get(['id', 'name'])->toArray();
+        if (!$this->lookupsLoaded) {
+            $this->allUsers = User::orderBy('name')
+                ->get(['id', 'name', 'email'])
+                ->toArray();
+            $this->allCompanies = Company::orderBy('name')
+                ->get(['id', 'name'])
+                ->toArray();
             $this->allContacts = Contact::orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name'])
-                ->map(fn ($c) => [
-                    'id' => $c->id,
-                    'name' => trim($c->first_name . ' ' . $c->last_name),
-                    'first_name' => $c->first_name,
-                    'last_name' => $c->last_name,
-                ])
+                ->map(
+                    fn($c) => [
+                        'id' => $c->id,
+                        'name' => trim($c->first_name . ' ' . $c->last_name),
+                        'first_name' => $c->first_name,
+                        'last_name' => $c->last_name,
+                    ],
+                )
                 ->toArray();
             $this->lookupsLoaded = true;
 
@@ -235,7 +246,7 @@ new class extends Component {
         $cacheKey = $this->kanbanCacheKey();
         $cached = Cache::get($cacheKey);
 
-        if ($cached && ! $this->hasActiveFilters()) {
+        if ($cached && !$this->hasActiveFilters()) {
             $this->kanbanData = $cached['stages'] ?? [];
             $this->kanbanETag = md5(json_encode($cached));
 
@@ -275,7 +286,7 @@ new class extends Component {
     public function handleNewDealBroadcast(array $data): void
     {
         $user = $this->getCurrentUser();
-        if (! $user || ($data['target_user_id'] ?? null) !== $user->id) {
+        if (!$user || ($data['target_user_id'] ?? null) !== $user->id) {
             return;
         }
 
@@ -284,7 +295,7 @@ new class extends Component {
 
         foreach ($this->kanbanData as $stage => &$stageData) {
             if ($stage === $newDeal['stage']) {
-                $stageData['deals'] = array_values(array_filter($stageData['deals'], fn ($d) => $d['id'] !== $newDeal['id']));
+                $stageData['deals'] = array_values(array_filter($stageData['deals'], fn($d) => $d['id'] !== $newDeal['id']));
                 array_unshift($stageData['deals'], $newDeal);
                 $stageData['count']++;
                 $stageData['total_amount'] += (float) ($newDeal['amount'] ?? 0);
@@ -337,19 +348,43 @@ new class extends Component {
         }
     }
 
-    public function updatedFilterDealName(): void { $this->onFilterChanged(); }
-    public function updatedFilterOwner(): void { $this->onFilterChanged(); }
-    public function updatedFilterContact(): void { $this->onFilterChanged(); }
-    public function updatedFilterCompanyName(): void { $this->onFilterChanged(); }
-    public function updatedFilterStage(): void { $this->onFilterChanged(); }
-    public function updatedMinAmount(): void { $this->onFilterChanged(); }
-    public function updatedMaxAmount(): void { $this->onFilterChanged(); }
+    public function updatedFilterDealName(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedFilterOwner(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedFilterContact(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedFilterCompanyName(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedFilterStage(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedMinAmount(): void
+    {
+        $this->onFilterChanged();
+    }
+    public function updatedMaxAmount(): void
+    {
+        $this->onFilterChanged();
+    }
     public function updatedDateFrom(): void
     {
         $this->isDefaultDateRange = false;
         $this->onFilterChanged();
     }
-    public function updatedDateTo(): void { $this->onFilterChanged(); }
+    public function updatedDateTo(): void
+    {
+        $this->onFilterChanged();
+    }
 
     public function applyFilters(): void
     {
@@ -373,10 +408,7 @@ new class extends Component {
 
     public function resetFilters(): void
     {
-        $this->reset([
-            'filterDealName', 'filterOwner', 'filterContact',
-            'filterCompanyName', 'filterStage', 'minAmount', 'maxAmount', 'dateTo',
-        ]);
+        $this->reset(['filterDealName', 'filterOwner', 'filterContact', 'filterCompanyName', 'filterStage', 'minAmount', 'maxAmount', 'dateTo']);
         $this->dateFrom = now()->startOfMonth()->toDateString();
         $this->isDefaultDateRange = true;
         $this->onFilterChanged();
@@ -411,20 +443,20 @@ new class extends Component {
 
     private function cacheTableData(): void
     {
-        $cacheKey = 'table_data_' . auth()->id() . '_' . md5(json_encode([
-            $this->filterDealName, $this->filterOwner, $this->filterContact,
-            $this->filterCompanyName, $this->filterStage, $this->minAmount,
-            $this->maxAmount, $this->dateFrom, $this->dateTo, $this->perPage, $this->currentPage
-        ]));
+        $cacheKey = 'table_data_' . auth()->id() . '_' . md5(json_encode([$this->filterDealName, $this->filterOwner, $this->filterContact, $this->filterCompanyName, $this->filterStage, $this->minAmount, $this->maxAmount, $this->dateFrom, $this->dateTo, $this->perPage, $this->currentPage]));
         Cache::put($cacheKey, $this->dealsForTable, now()->addMinutes(5));
     }
 
     private function cacheKanbanData(): void
     {
-        Cache::put($this->kanbanCacheKey(), [
-            'stages' => $this->kanbanData,
-            'cached_at' => now()->timestamp,
-        ], now()->addMinutes(5));
+        Cache::put(
+            $this->kanbanCacheKey(),
+            [
+                'stages' => $this->kanbanData,
+                'cached_at' => now()->timestamp,
+            ],
+            now()->addMinutes(5),
+        );
     }
 
     // ─────────────────────────────────────────────────────
@@ -435,8 +467,8 @@ new class extends Component {
     {
         $user = $this->getCurrentUser();
 
-        if (! $user) {
-            $this->dispatch('error', message: 'Unauthorized');
+        if (!$user) {
+            $this->dispatch('notify', type: 'error', message: 'Unauthorized');
 
             return;
         }
@@ -446,14 +478,14 @@ new class extends Component {
 
         // Authorization
         if ($user->isSalesTeam() && (int) $deal->user_id !== $user->id) {
-            $this->dispatch('error', message: 'You can only edit your own deals');
+            $this->dispatch('notify', type: 'error', message: 'You can only edit your own deals');
 
             return;
         }
 
-        if (! $user->canMoveToStage($newStage)) {
+        if (!$user->canMoveToStage($newStage)) {
             $allowed = implode(', ', $user->getAllowedDealStages());
-            $this->dispatch('error', message: "You can only move to: {$allowed}");
+            $this->dispatch('notify', type: 'error', message: "You can only move to: {$allowed}");
 
             return;
         }
@@ -469,7 +501,7 @@ new class extends Component {
         $this->invalidateKanbanCache();
 
         $this->dispatch('deals-updated');
-        $this->dispatch('success', message: 'Deal moved successfully');
+        $this->dispatch('notify', type: 'success', message: 'Deal moved successfully');
     }
 
     private function optimisticallyMoveDeal(int $dealId, string $fromStage, string $toStage, float $amount): void
@@ -479,7 +511,7 @@ new class extends Component {
         }
 
         // Guard against missing stage keys (e.g. after cache invalidation)
-        if (! isset($this->kanbanData[$fromStage]) || ! isset($this->kanbanData[$toStage])) {
+        if (!isset($this->kanbanData[$fromStage]) || !isset($this->kanbanData[$toStage])) {
             return;
         }
 
@@ -492,13 +524,11 @@ new class extends Component {
             }
         }
 
-        if (! $deal) {
+        if (!$deal) {
             return;
         }
 
-        $this->kanbanData[$fromStage]['deals'] = array_values(
-            array_filter($this->kanbanData[$fromStage]['deals'], fn ($d) => $d['id'] !== $dealId)
-        );
+        $this->kanbanData[$fromStage]['deals'] = array_values(array_filter($this->kanbanData[$fromStage]['deals'], fn($d) => $d['id'] !== $dealId));
         $this->kanbanData[$fromStage]['count']--;
         $this->kanbanData[$fromStage]['total_amount'] -= $amount;
 
@@ -521,7 +551,7 @@ new class extends Component {
 
     public function nextPage(): void
     {
-        if (! $this->hasMorePages) {
+        if (!$this->hasMorePages) {
             return;
         }
 
@@ -554,7 +584,7 @@ new class extends Component {
 
     public function toggleSelectAll(): void
     {
-        $this->selectAll = ! $this->selectAll;
+        $this->selectAll = !$this->selectAll;
 
         if ($this->selectAll) {
             if ($this->hasActiveFilters()) {
@@ -583,7 +613,7 @@ new class extends Component {
 
     private function getAllTableDealIds(): array
     {
-        return array_map(fn ($d) => $d['id'], $this->dealsForTable);
+        return array_map(fn($d) => $d['id'], $this->dealsForTable);
     }
 
     public function confirmSelectAll(): void
@@ -602,7 +632,7 @@ new class extends Component {
     public function toggleDealSelection(int $dealId): void
     {
         if (in_array($dealId, $this->selectedDeals)) {
-            $this->selectedDeals = array_filter($this->selectedDeals, fn ($id) => $id !== $dealId);
+            $this->selectedDeals = array_filter($this->selectedDeals, fn($id) => $id !== $dealId);
             $this->selectAll = false;
         } else {
             $this->selectedDeals[] = $dealId;
@@ -628,7 +658,7 @@ new class extends Component {
     public function openBatchModal(string $operation): void
     {
         if (empty($this->selectedDeals)) {
-            $this->dispatch('error', message: 'Select at least one deal');
+            $this->dispatch('notify', type: 'error', message: 'Select at least one deal');
 
             return;
         }
@@ -642,7 +672,7 @@ new class extends Component {
     public function confirmBatchUpdateOwner(): void
     {
         if (empty($this->batchOwnerValue)) {
-            $this->dispatch('error', message: 'Select an owner');
+            $this->dispatch('notify', type: 'error', message: 'Select an owner');
 
             return;
         }
@@ -655,7 +685,7 @@ new class extends Component {
     public function confirmBatchUpdateStage(): void
     {
         if (empty($this->batchStageValue)) {
-            $this->dispatch('error', message: 'Select a stage');
+            $this->dispatch('notify', type: 'error', message: 'Select a stage');
 
             return;
         }
@@ -676,51 +706,75 @@ new class extends Component {
     {
         $user = $this->getCurrentUser();
 
-        if (! $user || ! $user->isComplianceTeam()) {
-            $this->dispatch('error', message: 'Only Compliance Team can batch update');
+        if (!$user || !$user->isComplianceTeam()) {
+            $this->dispatch('notify', type: 'error', message: 'Only Compliance Team can batch update owners');
 
             return;
         }
 
-        Deal::whereIn('id', $this->selectedDeals)->update(['user_id' => $this->batchOwnerValue]);
+        Deal::whereIn('id', $this->selectedDeals)->update(['user_id' => (int) $this->batchOwnerValue]);
 
+        $this->invalidateKanbanCache();
         $this->loadDeals();
         $this->resetBatchState();
-        $this->dispatch('success', message: 'Owner updated');
+        $this->dispatch('notify', type: 'success', message: 'Owner updated');
     }
 
     public function executeBatchUpdateStage(): void
     {
         $user = $this->getCurrentUser();
 
-        if (! $user || ! $user->isComplianceTeam()) {
-            $this->dispatch('error', message: 'Only Compliance Team can batch update');
+        if (!$user) {
+            $this->dispatch('notify', type: 'error', message: 'Unauthorized');
 
             return;
         }
 
-        Deal::whereIn('id', $this->selectedDeals)->update(['stage' => $this->batchStageValue]);
+        if (!$user->isComplianceTeam() && !$user->isSalesTeam()) {
+            $this->dispatch('notify', type: 'error', message: 'You do not have permission to batch update');
 
+            return;
+        }
+
+        $deals = Deal::whereIn('id', $this->selectedDeals)->get();
+
+        foreach ($deals as $deal) {
+            if ($user->isSalesTeam() && (int) $deal->user_id !== $user->id) {
+                continue;
+            }
+
+            if (!$user->canMoveToStage($this->batchStageValue)) {
+                $this->dispatch('notify', type: 'error', message: 'You cannot move deals to that stage');
+
+                return;
+            }
+
+            $deal->update(['stage' => DealStage::from($this->batchStageValue)]);
+        }
+
+        $this->invalidateKanbanCache();
         $this->loadDeals();
         $this->resetBatchState();
-        $this->dispatch('success', message: 'Stage updated');
+        $this->dispatch('notify', type: 'success', message: 'Stage updated');
     }
 
     public function executeBatchDelete(): void
     {
         $user = $this->getCurrentUser();
 
-        if (! $user || ! $user->isComplianceTeam()) {
-            $this->dispatch('error', message: 'Only Compliance Team can delete');
+        if (!$user || !$user->isComplianceTeam()) {
+            $this->dispatch('notify', type: 'error', message: 'Only Compliance Team can delete');
 
             return;
         }
 
+        $count = count($this->selectedDeals);
         Deal::whereIn('id', $this->selectedDeals)->delete();
 
+        $this->invalidateKanbanCache();
         $this->loadDeals();
         $this->resetBatchState();
-        $this->dispatch('success', message: count($this->selectedDeals) . ' deal(s) deleted');
+        $this->dispatch('notify', type: 'success', message: $count . ' deal(s) deleted');
     }
 
     public function closeBatchModal(): void
@@ -753,6 +807,7 @@ new class extends Component {
             'owner' => $this->executeBatchUpdateOwner(),
             'stage' => $this->executeBatchUpdateStage(),
             'delete' => $this->executeBatchDelete(),
+            default => null,
         };
 
         $this->showConfirmModal = false;
@@ -766,7 +821,7 @@ new class extends Component {
     {
         if (in_array($column, $this->visibleColumns)) {
             if (count($this->visibleColumns) > 1) {
-                $this->visibleColumns = array_values(array_filter($this->visibleColumns, fn ($c) => $c !== $column));
+                $this->visibleColumns = array_values(array_filter($this->visibleColumns, fn($c) => $c !== $column));
             }
         } else {
             $this->visibleColumns[] = $column;
@@ -781,17 +836,20 @@ new class extends Component {
 
     public function exportUrl(): string
     {
-        return route('deals.export', array_filter([
-            'filterDealName' => $this->filterDealName ?: null,
-            'filterOwner' => $this->filterOwner ?: null,
-            'filterContact' => $this->filterContact ?: null,
-            'filterCompanyName' => $this->filterCompanyName ?: null,
-            'filterStage' => $this->filterStage ?: null,
-            'minAmount' => $this->minAmount ?: null,
-            'maxAmount' => $this->maxAmount ?: null,
-            'dateFrom' => $this->dateFrom ?: null,
-            'dateTo' => $this->dateTo ?: null,
-        ]));
+        return route(
+            'deals.export',
+            array_filter([
+                'filterDealName' => $this->filterDealName ?: null,
+                'filterOwner' => $this->filterOwner ?: null,
+                'filterContact' => $this->filterContact ?: null,
+                'filterCompanyName' => $this->filterCompanyName ?: null,
+                'filterStage' => $this->filterStage ?: null,
+                'minAmount' => $this->minAmount ?: null,
+                'maxAmount' => $this->maxAmount ?: null,
+                'dateFrom' => $this->dateFrom ?: null,
+                'dateTo' => $this->dateTo ?: null,
+            ]),
+        );
     }
 
     // ─────────────────────────────────────────────────────
@@ -843,15 +901,7 @@ new class extends Component {
 
     public function hasActiveFilters(): bool
     {
-        return ! empty($this->filterDealName)
-            || ! empty($this->filterOwner)
-            || ! empty($this->filterContact)
-            || ! empty($this->filterCompanyName)
-            || ! empty($this->filterStage)
-            || ($this->minAmount !== null && $this->minAmount !== '')
-            || ($this->maxAmount !== null && $this->maxAmount !== '')
-            || (! $this->isDefaultDateRange && ! empty($this->dateFrom))
-            || ! empty($this->dateTo);
+        return !empty($this->filterDealName) || !empty($this->filterOwner) || !empty($this->filterContact) || !empty($this->filterCompanyName) || !empty($this->filterStage) || ($this->minAmount !== null && $this->minAmount !== '') || ($this->maxAmount !== null && $this->maxAmount !== '') || (!$this->isDefaultDateRange && !empty($this->dateFrom)) || !empty($this->dateTo);
     }
 
     public function showAllTime(): void
@@ -889,29 +939,15 @@ new class extends Component {
     {
         return $this->buildBaseQuery()
             ->select(['id', 'name', 'amount', 'stage', 'user_id', 'created_at', 'updated_at'])
-            ->with([
-                'contacts:id,first_name,last_name',
-                'companies:id,name',
-                'user:id,name',
-            ])
+            ->with(['contacts:id,first_name,last_name', 'companies:id,name', 'user:id,name'])
             ->orderByDesc('updated_at'); // Most recently updated first
     }
 
     private function buildTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return $this->buildBaseQuery()
-            ->select([
-                'id', 'name', 'amount', 'stage', 'user_id',
-                'recruitment_agency', 'consultant_name', 'agency_deal_value', 'margin_agreed',
-                'date_sent', 'date_signed', 'who_signed', 'right_to_work',
-                'mda_reference_number', 'date_set_up', 'tax_code',
-                'created_at', 'updated_at',
-            ])
-            ->with([
-                'contacts:id,first_name,last_name',
-                'companies:id,name,email,phone,domain',
-                'user:id,name,email',
-            ]);
+            ->select(['id', 'name', 'amount', 'stage', 'user_id', 'recruitment_agency', 'consultant_name', 'agency_deal_value', 'margin_agreed', 'date_sent', 'date_signed', 'who_signed', 'right_to_work', 'mda_reference_number', 'date_set_up', 'tax_code', 'created_at', 'updated_at'])
+            ->with(['contacts:id,first_name,last_name', 'companies:id,name,email,phone,domain', 'user:id,name,email']);
     }
 
     private function buildBaseQuery(): \Illuminate\Database\Eloquent\Builder
@@ -925,43 +961,45 @@ new class extends Component {
         }
 
         // Filters
-        if (! empty($this->filterDealName)) {
+        if (!empty($this->filterDealName)) {
             $query->where('name', 'like', '%' . $this->filterDealName . '%');
         }
 
-        if (! empty($this->filterStage)) {
+        if (!empty($this->filterStage)) {
             $query->where('stage', $this->filterStage);
         }
 
-        if (! is_null($this->minAmount) && $this->minAmount !== '') {
+        if (!is_null($this->minAmount) && $this->minAmount !== '') {
             $query->where('amount', '>=', $this->minAmount);
         }
 
-        if (! is_null($this->maxAmount) && $this->maxAmount !== '') {
+        if (!is_null($this->maxAmount) && $this->maxAmount !== '') {
             $query->where('amount', '<=', $this->maxAmount);
         }
 
-        if (! empty($this->dateFrom)) {
+        if (!empty($this->dateFrom)) {
             $query->whereDate('created_at', '>=', $this->dateFrom);
         }
 
-        if (! empty($this->dateTo)) {
+        if (!empty($this->dateTo)) {
             $query->whereDate('created_at', '<=', $this->dateTo);
         }
 
-        if (! empty($this->filterOwner)) {
-            $query->whereHas('user', fn ($q) => $q->where('name', 'like', '%' . $this->filterOwner . '%'));
+        if (!empty($this->filterOwner)) {
+            $query->whereHas('user', fn($q) => $q->where('name', 'like', '%' . $this->filterOwner . '%'));
         }
 
-        if (! empty($this->filterCompanyName)) {
-            $query->whereHas('companies', fn ($q) => $q->where('name', 'like', '%' . $this->filterCompanyName . '%'));
+        if (!empty($this->filterCompanyName)) {
+            $query->whereHas('companies', fn($q) => $q->where('name', 'like', '%' . $this->filterCompanyName . '%'));
         }
 
-        if (! empty($this->filterContact)) {
-            $query->whereHas('contacts', fn ($q) => $q->where(function ($sub) {
-                $sub->where('first_name', 'like', '%' . $this->filterContact . '%')
-                    ->orWhere('last_name', 'like', '%' . $this->filterContact . '%');
-            }));
+        if (!empty($this->filterContact)) {
+            $query->whereHas(
+                'contacts',
+                fn($q) => $q->where(function ($sub) {
+                    $sub->where('first_name', 'like', '%' . $this->filterContact . '%')->orWhere('last_name', 'like', '%' . $this->filterContact . '%');
+                }),
+            );
         }
 
         return $query;
@@ -979,22 +1017,34 @@ new class extends Component {
             'amount' => (float) ($deal->amount ?? 0),
             'stage' => $deal->stage->value,
             'created_at' => $deal->created_at?->toIso8601String(),
-            'user' => $deal->relationLoaded('user') ? [
-                'id' => $deal->user->id,
-                'name' => $deal->user->name,
-            ] : null,
+            'user' => $deal->relationLoaded('user')
+                ? [
+                    'id' => $deal->user->id,
+                    'name' => $deal->user->name,
+                ]
+                : null,
             'contacts' => $deal->relationLoaded('contacts')
-                ? $deal->contacts->take(1)->map(fn ($c) => [
-                    'id' => $c->id,
-                    'first_name' => $c->first_name,
-                    'last_name' => $c->last_name,
-                ])->all()
+                ? $deal->contacts
+                    ->take(1)
+                    ->map(
+                        fn($c) => [
+                            'id' => $c->id,
+                            'first_name' => $c->first_name,
+                            'last_name' => $c->last_name,
+                        ],
+                    )
+                    ->all()
                 : [],
             'companies' => $deal->relationLoaded('companies')
-                ? $deal->companies->take(1)->map(fn ($c) => [
-                    'id' => $c->id,
-                    'name' => $c->name,
-                ])->all()
+                ? $deal->companies
+                    ->take(1)
+                    ->map(
+                        fn($c) => [
+                            'id' => $c->id,
+                            'name' => $c->name,
+                        ],
+                    )
+                    ->all()
                 : [],
         ];
     }
@@ -1020,26 +1070,36 @@ new class extends Component {
             'tax_code' => $deal->tax_code,
             'created_at' => $deal->created_at?->toIso8601String(),
             'updated_at' => $deal->updated_at?->toIso8601String(),
-            'user' => $deal->relationLoaded('user') ? [
-                'id' => $deal->user->id,
-                'name' => $deal->user->name,
-                'email' => $deal->user->email,
-            ] : null,
+            'user' => $deal->relationLoaded('user')
+                ? [
+                    'id' => $deal->user->id,
+                    'name' => $deal->user->name,
+                    'email' => $deal->user->email,
+                ]
+                : null,
             'contacts' => $deal->relationLoaded('contacts')
-                ? $deal->contacts->map(fn ($c) => [
-                    'id' => $c->id,
-                    'first_name' => $c->first_name,
-                    'last_name' => $c->last_name,
-                ])->all()
+                ? $deal->contacts
+                    ->map(
+                        fn($c) => [
+                            'id' => $c->id,
+                            'first_name' => $c->first_name,
+                            'last_name' => $c->last_name,
+                        ],
+                    )
+                    ->all()
                 : [],
             'companies' => $deal->relationLoaded('companies')
-                ? $deal->companies->map(fn ($c) => [
-                    'id' => $c->id,
-                    'name' => $c->name,
-                    'email' => $c->email,
-                    'phone' => $c->phone,
-                    'domain' => $c->domain,
-                ])->all()
+                ? $deal->companies
+                    ->map(
+                        fn($c) => [
+                            'id' => $c->id,
+                            'name' => $c->name,
+                            'email' => $c->email,
+                            'phone' => $c->phone,
+                            'domain' => $c->domain,
+                        ],
+                    )
+                    ->all()
                 : [],
         ];
     }
@@ -1050,18 +1110,7 @@ new class extends Component {
 
     private function kanbanCacheKey(): string
     {
-        $parts = [
-            auth()->id(),
-            $this->filterDealName,
-            $this->filterOwner,
-            $this->filterContact,
-            $this->filterCompanyName,
-            $this->filterStage,
-            $this->minAmount,
-            $this->maxAmount,
-            $this->dateFrom,
-            $this->dateTo,
-        ];
+        $parts = [auth()->id(), $this->filterDealName, $this->filterOwner, $this->filterContact, $this->filterCompanyName, $this->filterStage, $this->minAmount, $this->maxAmount, $this->dateFrom, $this->dateTo];
 
         return 'kanban_' . md5(serialize($parts));
     }
@@ -1078,7 +1127,7 @@ new class extends Component {
             $totalCount = $stageDeals->count();
             $visibleDeals = $stageDeals->take($this->kanbanPerStage);
             $stages[$stage->value] = [
-                'deals' => $visibleDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
+                'deals' => $visibleDeals->map(fn($d) => $this->serializeDealMinimal($d))->all(),
                 'count' => $totalCount,
                 'total_amount' => (float) $stageDeals->sum('amount'),
                 'has_more' => $totalCount > $this->kanbanPerStage,
@@ -1100,14 +1149,13 @@ new class extends Component {
         $newLimit = $offset + $this->kanbanPerStage;
 
         // Fetch fresh to get accurate slice
-        $query = $this->buildKanbanQuery()
-            ->where('stage', $stage);
+        $query = $this->buildKanbanQuery()->where('stage', $stage);
         $allStageDeals = $query->get();
         $totalCount = $allStageDeals->count();
         $visibleDeals = $allStageDeals->take($newLimit);
 
         $this->kanbanData[$stage] = [
-            'deals' => $visibleDeals->map(fn ($d) => $this->serializeDealMinimal($d))->all(),
+            'deals' => $visibleDeals->map(fn($d) => $this->serializeDealMinimal($d))->all(),
             'count' => $totalCount,
             'total_amount' => (float) $allStageDeals->sum('amount'),
             'has_more' => $totalCount > $newLimit,
@@ -1119,19 +1167,7 @@ new class extends Component {
 
     private function filterCacheKey(string $prefix = ''): string
     {
-        $parts = [
-            auth()->id(),
-            $this->view,
-            $this->filterDealName,
-            $this->filterOwner,
-            $this->filterContact,
-            $this->filterCompanyName,
-            $this->filterStage,
-            $this->minAmount,
-            $this->maxAmount,
-            $this->dateFrom,
-            $this->dateTo,
-        ];
+        $parts = [auth()->id(), $this->view, $this->filterDealName, $this->filterOwner, $this->filterContact, $this->filterCompanyName, $this->filterStage, $this->minAmount, $this->maxAmount, $this->dateFrom, $this->dateTo];
 
         return 'deals_' . $prefix . md5(serialize($parts));
     }
@@ -1161,18 +1197,32 @@ new class extends Component {
 <div class="space-y-6 w-full mx-auto p-4 sm:p-6 lg:p-8 antialiased text-slate-900 dark:text-slate-100"
     x-data="{
         view: @entangle('view').defer,
-    }">
+        showToast: false,
+        toastMessage: '',
+        toastType: 'success',
+    }"
+    x-on:notify.window="showToast = true; toastMessage = $event.detail.message; toastType = $event.detail.type; setTimeout(() => showToast = false, 3000);">
+
+    {{-- Toast notification --}}
+    <div x-show="showToast" x-transition
+        class="fixed top-5 right-5 z-50 px-5 py-3 rounded-xl shadow-xl text-sm font-medium"
+        :class="{ 'bg-emerald-500 text-white': toastType === 'success', 'bg-red-500 text-white': toastType === 'error' }">
+        <span x-text="toastMessage"></span>
+    </div>
 
     {{-- Loading indicator --}}
-    <div wire:loading.delay class="fixed top-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 z-50 animate-pulse"></div>
+    <div wire:loading.delay class="fixed top-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 z-50 animate-pulse">
+    </div>
 
     {{-- Filter loading overlay --}}
-    @if($filtering)
-        <div class="fixed inset-0 bg-white/30 dark:bg-slate-900/30 z-40 flex items-center justify-center pointer-events-none">
+    @if ($filtering)
+        <div
+            class="fixed inset-0 bg-white/30 dark:bg-slate-900/30 z-40 flex items-center justify-center pointer-events-none">
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg px-6 py-4 flex items-center gap-3">
                 <svg class="w-5 h-5 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                        stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
                 </svg>
                 <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Applying filters...</span>
             </div>
@@ -1198,9 +1248,9 @@ new class extends Component {
                         class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all duration-150
                             {{ $view === 'kanban' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-600/40' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                            <rect x="1" y="1" width="4" height="14" rx="1.5"/>
-                            <rect x="6" y="1" width="4" height="14" rx="1.5"/>
-                            <rect x="11" y="1" width="4" height="14" rx="1.5"/>
+                            <rect x="1" y="1" width="4" height="14" rx="1.5" />
+                            <rect x="6" y="1" width="4" height="14" rx="1.5" />
+                            <rect x="11" y="1" width="4" height="14" rx="1.5" />
                         </svg>
                         Kanban
                     </button>
@@ -1208,9 +1258,9 @@ new class extends Component {
                         class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-all duration-150
                             {{ $view === 'table' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-600/40' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                            <rect x="1" y="1" width="14" height="3" rx="1.5"/>
-                            <rect x="1" y="6" width="14" height="3" rx="1.5"/>
-                            <rect x="1" y="11" width="14" height="3" rx="1.5"/>
+                            <rect x="1" y="1" width="14" height="3" rx="1.5" />
+                            <rect x="1" y="6" width="14" height="3" rx="1.5" />
+                            <rect x="1" y="11" width="14" height="3" rx="1.5" />
                         </svg>
                         Table
                     </button>
@@ -1219,12 +1269,16 @@ new class extends Component {
                 <button wire:click="refreshDeals" wire:loading.attr="disabled"
                     class="inline-flex items-center justify-center p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
                     title="Refresh">
-                    <svg wire:loading.remove wire:target="refreshDeals" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    <svg wire:loading.remove wire:target="refreshDeals" class="w-3.5 h-3.5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <svg wire:loading wire:target="refreshDeals" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+                    <svg wire:loading wire:target="refreshDeals" class="w-3.5 h-3.5 animate-spin" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                            stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
                     </svg>
                 </button>
 
@@ -1237,15 +1291,52 @@ new class extends Component {
 
     {{-- Kanban View --}}
     @if ($view === 'kanban')
-        <div wire:key="kanban-board" wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">
+        <div wire:key="kanban-board" wire:loading.class="opacity-50 pointer-events-none"
+            class="transition-opacity duration-200">
             @php
                 $stageConfig = [
-                    'doc sent' => ['accent' => '#4f46e5', 'accentLight' => 'rgba(79,70,229,0.12)', 'accentText' => '#3730a3', 'icon' => '📄', 'label' => 'Doc Sent'],
-                    'doc signed' => ['accent' => '#0891b2', 'accentLight' => 'rgba(8,145,178,0.12)', 'accentText' => '#155e75', 'icon' => '✍️', 'label' => 'Doc Signed'],
-                    'compliant' => ['accent' => '#4ed386', 'accentLight' => 'rgba(217,119,6,0.12)', 'accentText' => '#1b8b41', 'icon' => '✅', 'label' => 'Compliant'],
-                    'ready for payment' => ['accent' => '#ea580c', 'accentLight' => 'rgba(234,88,12,0.12)', 'accentText' => '#9a3412', 'icon' => '💳', 'label' => 'Ready for Payment'],
-                    'paid' => ['accent' => '#16a34a', 'accentLight' => 'rgba(22,163,74,0.12)', 'accentText' => '#14532d', 'icon' => '💰', 'label' => 'Paid'],
-                    'lost' => ['accent' => '#dc2626', 'accentLight' => 'rgba(220,38,38,0.12)', 'accentText' => '#991b1b', 'icon' => '❌', 'label' => 'Lost'],
+                    'doc sent' => [
+                        'accent' => '#4f46e5',
+                        'accentLight' => 'rgba(79,70,229,0.12)',
+                        'accentText' => '#3730a3',
+                        'icon' => '📄',
+                        'label' => 'Doc Sent',
+                    ],
+                    'doc signed' => [
+                        'accent' => '#0891b2',
+                        'accentLight' => 'rgba(8,145,178,0.12)',
+                        'accentText' => '#155e75',
+                        'icon' => '✍️',
+                        'label' => 'Doc Signed',
+                    ],
+                    'compliant' => [
+                        'accent' => '#4ed386',
+                        'accentLight' => 'rgba(217,119,6,0.12)',
+                        'accentText' => '#1b8b41',
+                        'icon' => '✅',
+                        'label' => 'Compliant',
+                    ],
+                    'ready for payment' => [
+                        'accent' => '#ea580c',
+                        'accentLight' => 'rgba(234,88,12,0.12)',
+                        'accentText' => '#9a3412',
+                        'icon' => '💳',
+                        'label' => 'Ready for Payment',
+                    ],
+                    'paid' => [
+                        'accent' => '#16a34a',
+                        'accentLight' => 'rgba(22,163,74,0.12)',
+                        'accentText' => '#14532d',
+                        'icon' => '💰',
+                        'label' => 'Paid',
+                    ],
+                    'lost' => [
+                        'accent' => '#dc2626',
+                        'accentLight' => 'rgba(220,38,38,0.12)',
+                        'accentText' => '#991b1b',
+                        'icon' => '❌',
+                        'label' => 'Lost',
+                    ],
                 ];
             @endphp
             @include('components.deals.partials.⚡kanban', [
@@ -1259,15 +1350,52 @@ new class extends Component {
 
     {{-- Table View --}}
     @if ($view === 'table')
-        <div wire:key="table-view-{{ $currentPage }}" wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-200">
+        <div wire:key="table-view-{{ $currentPage }}" wire:loading.class="opacity-50 pointer-events-none"
+            class="transition-opacity duration-200">
             @php
                 $stageConfig = [
-                    'doc sent' => ['accent' => '#4f46e5', 'accentLight' => 'rgba(79,70,229,0.12)', 'accentText' => '#3730a3', 'icon' => '📄', 'label' => 'Doc Sent'],
-                    'doc signed' => ['accent' => '#0891b2', 'accentLight' => 'rgba(8,145,178,0.12)', 'accentText' => '#155e75', 'icon' => '✍️', 'label' => 'Doc Signed'],
-                    'compliant' => ['accent' => '#4ed386', 'accentLight' => 'rgba(217,119,6,0.12)', 'accentText' => '#1b8b41', 'icon' => '✅', 'label' => 'Compliant'],
-                    'ready for payment' => ['accent' => '#ea580c', 'accentLight' => 'rgba(234,88,12,0.12)', 'accentText' => '#9a3412', 'icon' => '💳', 'label' => 'Ready for Payment'],
-                    'paid' => ['accent' => '#16a34a', 'accentLight' => 'rgba(22,163,74,0.12)', 'accentText' => '#14532d', 'icon' => '💰', 'label' => 'Paid'],
-                    'lost' => ['accent' => '#dc2626', 'accentLight' => 'rgba(220,38,38,0.12)', 'accentText' => '#991b1b', 'icon' => '❌', 'label' => 'Lost'],
+                    'doc sent' => [
+                        'accent' => '#4f46e5',
+                        'accentLight' => 'rgba(79,70,229,0.12)',
+                        'accentText' => '#3730a3',
+                        'icon' => '📄',
+                        'label' => 'Doc Sent',
+                    ],
+                    'doc signed' => [
+                        'accent' => '#0891b2',
+                        'accentLight' => 'rgba(8,145,178,0.12)',
+                        'accentText' => '#155e75',
+                        'icon' => '✍️',
+                        'label' => 'Doc Signed',
+                    ],
+                    'compliant' => [
+                        'accent' => '#4ed386',
+                        'accentLight' => 'rgba(217,119,6,0.12)',
+                        'accentText' => '#1b8b41',
+                        'icon' => '✅',
+                        'label' => 'Compliant',
+                    ],
+                    'ready for payment' => [
+                        'accent' => '#ea580c',
+                        'accentLight' => 'rgba(234,88,12,0.12)',
+                        'accentText' => '#9a3412',
+                        'icon' => '💳',
+                        'label' => 'Ready for Payment',
+                    ],
+                    'paid' => [
+                        'accent' => '#16a34a',
+                        'accentLight' => 'rgba(22,163,74,0.12)',
+                        'accentText' => '#14532d',
+                        'icon' => '💰',
+                        'label' => 'Paid',
+                    ],
+                    'lost' => [
+                        'accent' => '#dc2626',
+                        'accentLight' => 'rgba(220,38,38,0.12)',
+                        'accentText' => '#991b1b',
+                        'icon' => '❌',
+                        'label' => 'Lost',
+                    ],
                 ];
             @endphp
             @include('components.deals.partials.⚡table-view', [
@@ -1283,29 +1411,41 @@ new class extends Component {
 
     {{-- Batch Modal --}}
     @if ($showBatchModal)
-        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" wire:click.self="closeBatchModal">
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            wire:click.self="closeBatchModal">
             <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-md w-full p-6">
                 <h3 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
-                    @if ($batchOperation === 'owner') Update Deal Owner @endif
-                    @if ($batchOperation === 'stage') Update Deal Stage @endif
-                    @if ($batchOperation === 'delete') Delete Deals @endif
+                    @if ($batchOperation === 'owner')
+                        Update Deal Owner
+                    @endif
+                    @if ($batchOperation === 'stage')
+                        Update Deal Stage
+                    @endif
+                    @if ($batchOperation === 'delete')
+                        Delete Deals
+                    @endif
                 </h3>
 
                 @if ($batchOperation === 'owner')
-                    <select wire:model="batchOwnerValue" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white">
+                    <select wire:model="batchOwnerValue"
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white">
                         <option value="">Choose an owner...</option>
                         @foreach ($allUsers as $u)
                             <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
                         @endforeach
                     </select>
                 @elseif ($batchOperation === 'stage')
-                    <select wire:model="batchStageValue" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white">
+                    <select wire:model="batchStageValue"
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white">
                         <option value="">Choose a stage...</option>
                         @php
                             $stageLabels = [
-                                'doc sent' => 'Doc Sent', 'doc signed' => 'Doc Signed',
-                                'compliant' => 'Compliant', 'ready for payment' => 'Ready for Payment',
-                                'paid' => 'Paid', 'lost' => 'Lost',
+                                'doc sent' => 'Doc Sent',
+                                'doc signed' => 'Doc Signed',
+                                'compliant' => 'Compliant',
+                                'ready for payment' => 'Ready for Payment',
+                                'paid' => 'Paid',
+                                'lost' => 'Lost',
                             ];
                         @endphp
                         @foreach ($stages as $s)
@@ -1317,8 +1457,11 @@ new class extends Component {
                 @endif
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button wire:click="closeBatchModal" class="px-4 py-2 rounded-lg border border-slate-300 text-sm">Cancel</button>
-                    <button wire:click="@if ($batchOperation === 'owner') confirmBatchUpdateOwner @elseif ($batchOperation === 'stage') confirmBatchUpdateStage @else confirmBatchDelete @endif" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm">Continue</button>
+                    <button wire:click="closeBatchModal"
+                        class="px-4 py-2 rounded-lg border border-slate-300 text-sm">Cancel</button>
+                    <button
+                        wire:click="@if ($batchOperation === 'owner') confirmBatchUpdateOwner @elseif ($batchOperation === 'stage') confirmBatchUpdateStage @else confirmBatchDelete @endif"
+                        class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm">Continue</button>
                 </div>
             </div>
         </div>
@@ -1326,17 +1469,22 @@ new class extends Component {
 
     {{-- Confirm Modal --}}
     @if ($showConfirmModal)
-        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" wire:click.self="closeBatchModal">
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            wire:click.self="closeBatchModal">
             <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-md w-full p-6">
                 <h3 class="text-lg font-semibold mb-2">Confirm Action</h3>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">{{ $confirmMessage }}</p>
                 <div class="flex justify-end gap-3">
-                    @if ($selectAll && ! $batchOperation)
-                        <button wire:click="cancelSelectAll" class="px-4 py-2 text-sm border rounded-lg">Page Only</button>
-                        <button wire:click="confirmSelectAll" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">Select All</button>
+                    @if ($selectAll && !$batchOperation)
+                        <button wire:click="cancelSelectAll" class="px-4 py-2 text-sm border rounded-lg">Page
+                            Only</button>
+                        <button wire:click="confirmSelectAll"
+                            class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">Select All</button>
                     @else
-                        <button wire:click="closeBatchModal" class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
-                        <button wire:click="confirmBatchAction" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">Confirm</button>
+                        <button wire:click="closeBatchModal"
+                            class="px-4 py-2 text-sm border rounded-lg">Cancel</button>
+                        <button wire:click="confirmBatchAction"
+                            class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">Confirm</button>
                     @endif
                 </div>
             </div>
@@ -1347,22 +1495,18 @@ new class extends Component {
     @if ($showPermissionModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4" x-data="{ show: @entangle('showPermissionModal') }">
             {{-- Backdrop --}}
-            <div
-                class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                wire:click="closePermissionModal"
-                x-on:click="show = false"
-            ></div>
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="closePermissionModal"
+                x-on:click="show = false"></div>
 
             {{-- Modal Content --}}
-            <div
-                class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6"
-                @click.stop
-            >
+            <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6" @click.stop>
                 {{-- Lock Icon --}}
                 <div class="flex justify-center mb-5">
                     <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
                 </div>
@@ -1381,15 +1525,19 @@ new class extends Component {
                         {{ $restrictedStageName }}
                     </p>
                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                        for deal: <span class="font-medium text-slate-700 dark:text-slate-300">{{ $restrictedDealName }}</span>
+                        for deal: <span
+                            class="font-medium text-slate-700 dark:text-slate-300">{{ $restrictedDealName }}</span>
                     </p>
                 </div>
 
                 {{-- Info Box --}}
-                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-6">
+                <div
+                    class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-6">
                     <div class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p class="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
                             Only the Compliance Team can manage deals in payment-related stages.
@@ -1398,14 +1546,11 @@ new class extends Component {
                 </div>
 
                 {{-- Close Button --}}
-                <button
-                    wire:click="closePermissionModal"
-                    class="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-                >
+                <button wire:click="closePermissionModal"
+                    class="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
                     Understood
                 </button>
             </div>
         </div>
     @endif
 </div>
-

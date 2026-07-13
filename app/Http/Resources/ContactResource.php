@@ -33,7 +33,12 @@ class ContactResource extends JsonResource
             'marital_status' => $this->marital_status,
             'gender' => $this->gender,
             'companies' => $this->whenLoaded('companies'),
-            'deals' => $this->whenLoaded('deals'),
+            'deals' => $this->whenLoaded('deals', fn () => $this->deals->map(
+                fn ($deal) => array_merge(
+                    $deal->toArray(),
+                    ['pivot' => ['is_primary' => (bool) $deal->pivot?->is_primary]],
+                ),
+            )),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

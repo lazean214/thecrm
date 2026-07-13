@@ -91,7 +91,7 @@ class KanbanController extends Controller
         $this->applyFilters($query, $filters);
 
         // Order by stage (for kanban grouping) then by most recent
-        $query->orderByRaw("FIELD(stage, 'doc sent', 'doc signed', 'compliant', 'ready for payment', 'paid')")
+        $query->orderBy('stage', 'asc')
             ->orderBy('updated_at', 'desc');
 
         $deals = $query->get();
@@ -136,12 +136,18 @@ class KanbanController extends Controller
                     'id' => $c->id,
                     'first_name' => $c->first_name,
                     'last_name' => $c->last_name,
+                    'pivot' => ['is_primary' => (bool) $c->pivot?->is_primary],
                 ])->all()
                 : [],
             'companies' => $deal->relationLoaded('companies')
                 ? $deal->companies->take(1)->map(fn ($c) => [
                     'id' => $c->id,
                     'name' => $c->name,
+                    'pivot' => [
+                        'is_primary' => (bool) $c->pivot?->is_primary,
+                        'agency_deal_value' => $c->pivot?->agency_deal_value,
+                        'margin_agreed' => $c->pivot?->margin_agreed,
+                    ],
                 ])->all()
                 : [],
         ];

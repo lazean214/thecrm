@@ -41,11 +41,6 @@ Alpine.data('dateRangePicker', (initialDateFrom = '', initialDateTo = '') => ({
     }
 }));
 
-window.addEventListener('notify', event => {
-    Toastify({
-        text: event.detail.message,
-        duration: 3000
-    }).showToast()
-})
+// Toast notifications are handled by Flux UI toast components in the layout.
 
 
