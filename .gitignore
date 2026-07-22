@@ -83,3 +83,4 @@ pest.php
 
 # Sensitive company data (contains real company names)
 app/Enums/InternalCompany.php
+scratch_test.php
