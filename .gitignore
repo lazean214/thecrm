@@ -84,11 +84,4 @@ pest.php
 # Sensitive company data (contains real company names)
 app/Enums/InternalCompany.php
 scratch_test.php
-AGENTS.md
-API-AUDIT-RECOMMENDATION.md
-ARCHITECTURE_SCALING_AUDIT.md
-CLAUDE.md
-DEPLOYMENT_GUIDE.md
-PRODUCTION_AUDIT_UPDATED.md
-PRODUCTION_AUDIT.md
-USER_GUIDE.md
+/docs/
