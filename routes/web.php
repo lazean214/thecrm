@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\DealExportController;
 use App\Http\Controllers\GdprAdminController;
 use App\Http\Controllers\GdprController;
+use App\Http\Controllers\RemittanceController;
 use App\Http\Controllers\SignableEnvelopeController;
 use App\Http\Controllers\StorageController;
 use App\Imports\CompanyImport;
@@ -36,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('users', 'user')->name('users');
     Route::view('roles', 'roles')->name('roles');
     Route::view('permissions', 'permissions')->name('permissions');
+    Route::get('remittances', [RemittanceController::class, 'index'])->name('remittances.index');
+    Route::view('remittances/report', 'remittances.report')->name('remittances.report');
+    Route::post('/ai/assistant', AssistantController::class)->middleware('throttle:30,1')->name('ai.assistant');
 });
 
 require __DIR__.'/settings.php';

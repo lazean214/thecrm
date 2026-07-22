@@ -21,6 +21,9 @@
                 <flux:tooltip :content="__('Search')" position="bottom">
                     <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" :label="__('Search')" />
                 </flux:tooltip>
+                <flux:tooltip :content="__('AI Assistant')" position="bottom">
+                    <flux:navbar.item class="!h-10 [&>div>svg]:size-5 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300" icon="sparkles" href="#" x-on:click.prevent="$dispatch('toggle-ai-assistant')" :label="__('AI Assistant')" />
+                </flux:tooltip>
             </flux:navbar>
 
             <x-desktop-user-menu />
@@ -49,6 +52,9 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="building-office" :href="route('companies')" :current="request()->routeIs('companies*')" wire:navigate>
                         {{ __('Companies') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="sparkles" href="#" x-on:click.prevent="$dispatch('toggle-ai-assistant')">
+                        {{ __('AI Assistant') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
@@ -95,6 +101,8 @@
         </flux:sidebar>
 
         {{ $slot }}
+
+        <livewire:ai.assistant-panel />
 
         @persist('toast')
             <flux:toast.group>

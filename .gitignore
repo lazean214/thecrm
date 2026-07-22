@@ -55,6 +55,9 @@ Thumbs.db
 /.codex/
 /.cursor/
 /.gemini/
+/.opencode/
+*.ai
+*.ai.json
 
 # CRM Automation
 crm-automation/
@@ -62,10 +65,21 @@ crm-automation/
 # Browser simulation screenshots
 tests/BrowserSimulation/screenshots/*.png
 
-# Production audit (internal)
-PRODUCTION_AUDIT.md
-ARCHITECTURE_SCALING_AUDIT.md
-DEPLOYMENT_GUIDE.md
-PRODUCTION_AUDIT_UPDATED.md
+# Testing files
+tests/BrowserSimulation/
+tests/Pest/
+tests/Unit/
+tests/Feature/
+tests/Browser/
+phpunit.xml
+phpunit.xml.bak
+pest.php
+.phpunit.cache/
+.phpunit.result.cache
+
+# Markdown files (extra documentation)
+*.md
+!README.md
+
 # Sensitive company data (contains real company names)
 app/Enums/InternalCompany.php

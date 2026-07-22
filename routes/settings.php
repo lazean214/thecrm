@@ -2,6 +2,7 @@
 
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\DataManagement;
+use App\Livewire\Settings\FiscalYearSettings;
 use App\Livewire\Settings\Notifications;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\Security;
@@ -17,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('settings/notifications', Notifications::class)->name('notifications.edit');
     Route::livewire('settings/appearance', Appearance::class)->name('appearance.edit');
     Route::livewire('settings/data', DataManagement::class)->name('data.edit');
+    Route::livewire('settings/fiscal-year', FiscalYearSettings::class)->name('fiscal-year.edit');
 
     Route::livewire('settings/security', Security::class)
         ->middleware([

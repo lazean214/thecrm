@@ -6,9 +6,11 @@ use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\User;
 use App\Observers\DealObserver;
+use App\Policies\AiAssistantPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\DealPolicy;
 use App\Policies\UserPolicy;
+use App\Services\Ai\AiCrmAssistant;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -49,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Deal::class, DealPolicy::class);
         Gate::policy(Contact::class, ContactPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(AiCrmAssistant::class, AiAssistantPolicy::class);
     }
 
     /**

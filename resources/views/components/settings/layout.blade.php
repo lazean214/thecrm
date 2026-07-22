@@ -6,6 +6,7 @@
             <flux:navlist.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:navlist.item>
             <flux:navlist.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
             <flux:navlist.item :href="route('data.edit')" wire:navigate>{{ __('Data Management') }}</flux:navlist.item>
+            <flux:navlist.item :href="route('fiscal-year.edit')" wire:navigate>{{ __('Fiscal Year') }}</flux:navlist.item>
         </flux:navlist>
     </div>
 
