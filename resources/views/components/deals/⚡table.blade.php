@@ -1146,7 +1146,7 @@ new class extends Component {
         ];
     }
 
-    public function loadMoreInStage(string $stage): void
+    public function loadMoreInStage(string $stage): array
     {
         $offset = $this->kanbanExpandedStages[$stage] ?? $this->kanbanPerStage;
         $newLimit = $offset + $this->kanbanPerStage;
@@ -1157,15 +1157,15 @@ new class extends Component {
         $totalCount = $allStageDeals->count();
         $visibleDeals = $allStageDeals->take($newLimit);
 
-        $this->kanbanData[$stage] = [
+        $this->kanbanExpandedStages[$stage] = $newLimit;
+
+        return [
             'deals' => $visibleDeals->map(fn($d) => $this->serializeDealMinimal($d))->all(),
             'count' => $totalCount,
             'total_amount' => (float) $allStageDeals->sum('amount'),
             'has_more' => $totalCount > $newLimit,
             'offset' => $newLimit,
         ];
-
-        $this->kanbanExpandedStages[$stage] = $newLimit;
     }
 
     private function filterCacheKey(string $prefix = ''): string

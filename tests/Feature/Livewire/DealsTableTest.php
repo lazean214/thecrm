@@ -78,3 +78,39 @@ test('deal stage can be updated', function () {
 
     expect($deal->fresh()->stage)->toBe(DealStage::DOC_SIGNED);
 });
+
+test('load more in stage returns expanded stage data without losing other stages', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    foreach (range(1, 61) as $i) {
+        Deal::create([
+            'user_id' => $user->id,
+            'name' => "Doc Sent Deal $i",
+            'amount' => 100,
+            'stage' => DealStage::DOC_SENT->value,
+        ]);
+    }
+
+    Deal::create([
+        'user_id' => $user->id,
+        'name' => 'Signed Deal',
+        'amount' => 200,
+        'stage' => DealStage::DOC_SIGNED->value,
+    ]);
+
+    Livewire::test('deals.table')
+        ->call('showAllTime')
+        ->call('loadMoreInStage', DealStage::DOC_SENT->value)
+        ->assertReturned(function ($result) {
+            expect($result)->toBeArray();
+            expect($result)->toHaveKeys(['deals', 'count', 'total_amount', 'has_more', 'offset']);
+            expect($result['count'])->toBe(61);
+            expect($result['offset'])->toBe(100);
+            expect($result['has_more'])->toBeFalse();
+            expect($result['deals'])->toHaveCount(61);
+
+            return true;
+        })
+        ->assertNotSet('kanbanData.doc sent', null);
+});

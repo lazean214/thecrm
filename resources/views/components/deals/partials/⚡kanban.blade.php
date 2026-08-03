@@ -6,7 +6,8 @@
     $editableStages = $editableStages ?? [];
 @endphp
 
-<div x-data="kanbanBoard({
+<div wire:ignore
+    x-data="kanbanBoard({
     kanbanData: {{ Js::from($kanbanData) }},
     stages: {{ Js::from($stages) }},
     stageConfig: {{ Js::from($stageConfig) }},
@@ -151,7 +152,7 @@
 
                 {{-- Load more button --}}
                 <template x-if="kanbanData[stage]?.has_more">
-                    <button @click="$wire.loadMoreInStage(stage)"
+                    <button @click="loadMoreStage(stage)"
                         class="w-full py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition flex items-center justify-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -277,6 +278,14 @@
                 // Server data is already in correct format: { stage: { deals: [], count, total_amount, has_more } }
                 if (serverData && typeof serverData === 'object') {
                     this.kanbanData = serverData;
+                    this.saveState();
+                }
+            },
+
+            async loadMoreStage(stage) {
+                const data = await this.$wire.loadMoreInStage(stage);
+                if (data && typeof data === 'object') {
+                    this.kanbanData[stage] = data;
                     this.saveState();
                 }
             },

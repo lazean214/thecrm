@@ -4,10 +4,15 @@
 
 # Environment files
 .env
-.env.backup
-.env.local
-.env.testing
-.env.production
+.env.*
+!.env.example
+
+# Secret material and certificates
+*.pem
+*.p12
+*.key
+*.crt
+*.pub
 
 # Generated / cached
 .phpunit.cache/
@@ -61,6 +66,13 @@ Thumbs.db
 
 # CRM Automation
 crm-automation/
+crm-automation/**/*.csv
+crm-automation/**/*.log
+crm-automation/progress.txt
+crm-automation/processed_emails.log
+crm-automation/failed_deals_*.csv
+crm-automation/*.xlsx
+crm-automation/*.json
 
 # Browser simulation screenshots
 tests/BrowserSimulation/screenshots/*.png
