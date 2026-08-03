@@ -305,11 +305,11 @@ class RemittanceReport extends Component
         // ── Biller by Owner ──────────────────────────────────
         $this->billerByOwner = $records->groupBy('deal_owner')
             ->map(function ($group) {
-                $owner = User::find($group->first()->deal_owner);
+                $first = $group->first();
 
                 return [
-                    'owner_id' => $group->first()->deal_owner,
-                    'owner_name' => $owner?->name ?? '—',
+                    'owner_id' => $first->deal_owner,
+                    'owner_name' => $first->owner?->name ?? '—',
                     'active_billers' => $group->pluck('contact_id')->unique()->count(),
                     'total_tsv' => $group->sum('amount'),
                     'total_hours' => $group->sum('hours'),
@@ -322,11 +322,11 @@ class RemittanceReport extends Component
         // ── Workers by Company ────────────────────────────────
         $this->workersByCompany = $records->groupBy('company_id')
             ->map(function ($group) {
-                $company = Company::find($group->first()->company_id);
+                $first = $group->first();
 
                 return [
-                    'company_id' => $group->first()->company_id,
-                    'company_name' => $company?->name ?? '—',
+                    'company_id' => $first->company_id,
+                    'company_name' => $first->company?->name ?? '—',
                     'worker_count' => $group->pluck('contact_id')->unique()->count(),
                     'total_tsv' => $group->sum('amount'),
                     'total_hours' => $group->sum('hours'),

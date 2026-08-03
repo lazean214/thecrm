@@ -43,8 +43,6 @@ new class extends Component {
     public $right_to_work;
     public $proof_of_address;
     public $photo_id_passport;
-    public $mda_setup;
-    public $mda_reference_number;
     public $date_set_up;
     public $remittance_received;
     public $date_logged;
@@ -71,6 +69,13 @@ new class extends Component {
     public $account_number;
     public $sort_code;
 
+    // ── Payroll ──
+    public $payroll_company;
+    public $payroll_source;
+    public $payroll_reference;
+    public $payroll_start_date;
+    public $payroll_status;
+
     // ── Metadata ──
     public $company_name;
     public $contacts = [];
@@ -91,6 +96,7 @@ new class extends Component {
     public array $internalCompanies = [];
     public $owners = [];
     public array $stages;
+    public array $payrollSources;
 
     public function mount(int $dealId): void
     {
@@ -101,6 +107,8 @@ new class extends Component {
         $this->internalCompanies = InternalCompanies::all();
 
         $this->owners = User::select('id', 'name')->get();
+
+        $this->payrollSources = ['MDA', 'OCTOPAY'];
 
         $this->loadDeal();
 
@@ -139,8 +147,6 @@ new class extends Component {
         $this->right_to_work = $this->deals->right_to_work;
         $this->proof_of_address = $this->deals->proof_of_address;
         $this->photo_id_passport = $this->deals->photo_id_passport;
-        $this->mda_setup = $this->deals->mda_setup;
-        $this->mda_reference_number = $this->deals->mda_reference_number;
         $this->date_set_up = $this->deals->date_set_up;
         $this->remittance_received = $this->deals->remittance_received;
         $this->date_logged = $this->deals->date_logged;
@@ -170,6 +176,13 @@ new class extends Component {
         $this->bank = $contact->bank ?? '';
         $this->account_number = $contact->account_number ?? '';
         $this->sort_code = $contact->sort_code ?? '';
+
+        $this->payroll_company = $contact->payroll_company ?? '';
+        $this->payroll_source = $contact->payroll_source ?? '';
+        $this->payroll_reference = $contact->payroll_reference ?? '';
+        $this->payroll_start_date = $contact->payroll_start_date ?? '';
+        $this->payroll_status = $contact->payroll_status ?? 'pending';
+
         $this->created_at = $this->deals->created_at;
         $this->updated_at = $this->deals->updated_at;
     }
@@ -197,7 +210,7 @@ new class extends Component {
             return false;
         }
 
-        if ($user->isSalesTeam() && !$user->canMoveToStage($this->deals->stage->value)) {
+        if ($user->isSalesTeam() && !$user->canMoveToStage(is_object($this->deals->stage) ? $this->deals->stage->value : $this->deals->stage)) {
             return false;
         }
 
@@ -218,7 +231,7 @@ new class extends Component {
             return;
         }
 
-        $oldStage = $this->deals->stage->value;
+        $oldStage = is_object($this->deals->stage) ? $this->deals->stage->value : $this->deals->stage;
         $this->deals->update(['stage' => $stage]);
 
         $user = auth()->user();
@@ -324,7 +337,7 @@ new class extends Component {
         $this->validate($this->dealRules());
 
         $originalDeal = $this->deals->replicate();
-        $originalStage = $this->deals->stage->value;
+        $originalStage = is_object($this->deals->stage) ? $this->deals->stage->value : $this->deals->stage;
 
         // ── Save deal fields ──
         $this->deals->update([
@@ -345,8 +358,6 @@ new class extends Component {
             'right_to_work' => $this->right_to_work,
             'proof_of_address' => $this->proof_of_address,
             'photo_id_passport' => $this->photo_id_passport,
-            'mda_setup' => $this->mda_setup,
-            'mda_reference_number' => $this->mda_reference_number,
             'date_set_up' => $this->date_set_up,
             'remittance_received' => $this->remittance_received,
             'date_logged' => $this->date_logged,
@@ -358,10 +369,10 @@ new class extends Component {
 
         $this->deals->logChanges($originalDeal);
 
-        if ($originalStage !== $this->deals->stage->value) {
+        if ($originalStage !== (is_object($this->deals->stage) ? $this->deals->stage->value : $this->deals->stage)) {
             $user = auth()->user();
             $reason = $user->isSalesTeam() ? 'Sales Team action' : ($user->isComplianceTeam() ? 'Compliance Team action' : 'System action');
-            $this->deals->logStageChange($originalStage, $this->deals->stage->value, $reason);
+            $this->deals->logStageChange($originalStage, is_object($this->deals->stage) ? $this->deals->stage->value : $this->deals->stage, $reason);
         }
 
         if ($originalDeal->user_id != $this->user_id) {
@@ -406,6 +417,11 @@ new class extends Component {
                 'bank' => $this->bank,
                 'account_number' => $this->account_number,
                 'sort_code' => $this->sort_code,
+                'payroll_company' => $this->payroll_company ?: null,
+                'payroll_source' => $this->payroll_source ?: null,
+                'payroll_reference' => $this->payroll_reference ?: null,
+                'payroll_start_date' => $this->payroll_start_date ?: null,
+                'payroll_status' => $this->payroll_status ?: null,
             ]);
 
             foreach (['first_name', 'last_name', 'email', 'phone'] as $field) {
@@ -536,7 +552,15 @@ new class extends Component {
 
             @include('components.deals.partials.views.⚡deals-details')
             @include('components.deals.partials.views.⚡worker-details')
-            @include('components.deals.partials.views.⚡mda-details')
+            @include('components.deals.partials.views.⚡payroll-details')
+
+            <a href="{{ route('internal-companies') }}"
+                class="mt-4 flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-sm transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Manage Internal Companies
+            </a>
         </aside>
 
         <main class="w-4/6 px-5">

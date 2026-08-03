@@ -1,4 +1,4 @@
-<div x-data="{ isOpen: @entangle('isOpen') }"
+<div x-data="{ isOpen: $wire.entangle('isOpen') }"
      x-show="isOpen"
      x-on:keydown.window.escape="isOpen = false"
      class="relative z-50"
@@ -34,8 +34,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 21L14.907 18m4.917-4.917-1.432-1.432a6.002 6.002 0 0 1-8.387-.001c-.111-.112-.224-.226-.335-.341a6.002 6.002 0 0 1 0-8.388l1.432-1.432m1.996 1.996 1.432 1.432m1.996 1.996 1.432 1.432M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-3 1.5V3" />
                         </svg>
                         <div>
-                            <h2 class="text-lg font-semibold tracking-tight">AI CRM Assistant</h2>
-                            <p class="text-xs text-indigo-200/90">Powered by Gemini & Laravel AI</p>
+                            <h2 class="text-lg font-semibold tracking-tight">CRM ChatBot</h2>
+                            <p class="text-xs text-indigo-200/90">Deterministic answers from your CRM data</p>
                         </div>
                     </div>
 
@@ -95,6 +95,19 @@
                                 @endif
                             </div>
 
+                            <!-- View deals link (only for assistant messages) -->
+                            @if ($message['role'] === 'assistant' && ! empty($message['dealsUrl']))
+                                <div class="mt-2 max-w-[85%]">
+                                    <a href="{{ $message['dealsUrl'] }}" target="_blank" rel="noopener"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-100/50 dark:border-indigo-950 transition-colors cursor-pointer">
+                                        View deals
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12l-7.5 7.5M21 12H3" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            @endif
+
                             <!-- Suggestion chips (only for assistant messages) -->
                             @if ($message['role'] === 'assistant' && !empty($message['suggestions']))
                                 <div class="mt-2 flex flex-wrap gap-1.5 max-w-[85%]">
@@ -115,12 +128,12 @@
                         <div class="flex flex-col items-start">
                             <div class="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm">
                                 <div class="flex items-center space-x-1.5">
-                                    <span class="text-xs text-zinc-500 dark:text-zinc-400 mr-1.5">Querying CRM models</span>
+                                    <span class="text-xs text-zinc-500 dark:text-zinc-400 mr-1.5">Querying CRM data</span>
                                     <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                                     <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
                                     <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
                                 </div>
-                                <p class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Fetching data before analysis</p>
+                                <p class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Looking up your data</p>
                             </div>
                         </div>
                     @endif

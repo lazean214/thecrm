@@ -8,6 +8,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -63,21 +65,21 @@ class User extends Authenticatable implements PasskeyUser
             ->implode('');
     }
 
-    public function dealEmailLogs()
+    public function dealEmailLogs(): HasMany
     {
         return $this->hasMany(
             DealEmailLog::class
         );
     }
 
-    public function deals()
+    public function deals(): HasMany
     {
         return $this->hasMany(
             Deal::class
         );
     }
 
-    public function teams()
+    public function teams(): BelongsToMany
     {
         return $this->belongsToMany(
             Team::class,
@@ -148,7 +150,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Check if user can move a deal to a specific stage
      */
-    public function canMoveToStage($stage): bool
+    public function canMoveToStage(string $stage): bool
     {
         return in_array($stage, $this->getAllowedDealStages());
     }

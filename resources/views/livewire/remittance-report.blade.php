@@ -1,4 +1,4 @@
-<div class="space-y-6" x-data="remittanceDashboard(@entangle('billerByOwner'), @entangle('workersByCompany'))" x-init="init()">
+<div class="space-y-6" x-data="remittanceDashboard($wire.entangle('billerByOwner'), $wire.entangle('workersByCompany'))" x-init="init()">
 
     {{-- ── Header ─────────────────────────────────────────── --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

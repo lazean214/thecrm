@@ -164,9 +164,9 @@ new class extends Component {
         $stages = array_map(fn ($s) => $s->value, DealStage::cases());
 
         return $this->pipelineRows()->map(fn ($r) => [
-            'label' => $r->stage->value,
+            'label' => $r->stage,
             'value' => (float) $r->total_value,
-            'color' => $this->chartColors[array_search($r->stage->value, $stages) % count($this->chartColors)] ?? '#4f46e5',
+            'color' => $this->chartColors[array_search($r->stage, $stages) % count($this->chartColors)] ?? '#4f46e5',
         ])->toArray();
     }
 
@@ -325,7 +325,7 @@ new class extends Component {
     private function stageChartData(): array
     {
         return $this->stageRows()->map(fn ($r) => [
-            'label' => $r->stage->value,
+            'label' => $r->stage,
             'value' => (float) $r->count,
         ])->toArray();
     }

@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Deal;
 use App\Notifications\DealCreatedNotification;
+use Illuminate\Support\Facades\Log;
 
 class DealObserver
 {
@@ -13,15 +14,23 @@ class DealObserver
      */
     public function created(Deal $deal): void
     {
-        // Stamp initial stage timestamp without triggering observer loop
-        $deal->timestamps = false;
-        $deal->updateQuietly(['stage_updated_at' => now()]);
-        $deal->timestamps = true;
+        try {
+            // Stamp initial stage timestamp without triggering observer loop
+            $deal->timestamps = false;
+            $deal->updateQuietly(['stage_updated_at' => now()]);
+            $deal->timestamps = true;
+        } catch (\Exception $e) {
+            Log::error("Failed to stamp stage_updated_at for deal {$deal->id}: {$e->getMessage()}");
+        }
 
-        $deal->load('user');
+        try {
+            $deal->load('user');
 
-        if ($deal->user) {
-            $deal->user->notify(new DealCreatedNotification($deal));
+            if ($deal->user) {
+                $deal->user->notify(new DealCreatedNotification($deal));
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to send deal created notification for deal {$deal->id}: {$e->getMessage()}");
         }
     }
 
@@ -32,10 +41,14 @@ class DealObserver
     public function updated(Deal $deal): void
     {
         if ($deal->wasChanged('stage')) {
-            // Stamp the stage change time without triggering observer loop
-            $deal->timestamps = false;
-            $deal->updateQuietly(['stage_updated_at' => now()]);
-            $deal->timestamps = true;
+            try {
+                // Stamp the stage change time without triggering observer loop
+                $deal->timestamps = false;
+                $deal->updateQuietly(['stage_updated_at' => now()]);
+                $deal->timestamps = true;
+            } catch (\Exception $e) {
+                Log::error("Failed to stamp stage_updated_at for deal {$deal->id}: {$e->getMessage()}");
+            }
         }
     }
 }

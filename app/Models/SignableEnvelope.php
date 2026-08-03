@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SignableEnvelope extends Model
 {
@@ -26,6 +27,6 @@ class SignableEnvelope extends Model
      */
     public function deal(): BelongsTo
     {
-        return $table->belongsTo(Deal::class);
+        return $this->belongsTo(Deal::class);
     }
 }

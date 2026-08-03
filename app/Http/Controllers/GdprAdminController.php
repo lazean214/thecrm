@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GdprImportSettingsRequest;
+use App\Http\Requests\GdprUpdateSettingsRequest;
 use App\Models\GdprExportRequest;
 use App\Models\GdprSetting;
 use App\Services\GdprRetentionService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 class GdprAdminController extends Controller
@@ -31,15 +32,9 @@ class GdprAdminController extends Controller
         return view('admin.gdpr.dashboard', compact('stats', 'recentExports', 'settings'));
     }
 
-    public function updateSettings(Request $request)
+    public function updateSettings(GdprUpdateSettingsRequest $request)
     {
-        $validated = $request->validate([
-            'settings' => 'required|array',
-            'settings.*.entity_type' => 'required|string',
-            'settings.*.retention_months' => 'required|integer|min:1|max:120',
-            'settings.*.is_enabled' => 'boolean',
-            'settings.*.custom_action' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated['settings'] as $settingData) {
             GdprSetting::updateOrCreate(
@@ -73,11 +68,8 @@ class GdprAdminController extends Controller
         ]);
     }
 
-    public function importSettings(Request $request)
+    public function importSettings(GdprImportSettingsRequest $request)
     {
-        $request->validate([
-            'settings_file' => 'required|file|mimes:json|max:1024',
-        ]);
 
         $content = json_decode($request->file('settings_file')->get(), true);
 

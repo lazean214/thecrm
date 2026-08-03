@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Ai;
 
-use App\Services\Ai\AiCrmAssistant;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Services\Ai\ChatBot\CrmChatBot;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,7 +15,7 @@ class AssistantPanel extends Component
     public bool $isOpen = false;
 
     /**
-     * @var array<int, array{role: string, content: string, suggestions?: array<int, string>}>
+     * @var array<int, array{role: string, content: string, suggestions?: array<int, string>, dealsUrl?: ?string}>
      */
     public array $messages = [];
 
@@ -28,15 +28,21 @@ class AssistantPanel extends Component
     {
         $this->isOpen = ! $this->isOpen;
 
-        // Seed welcome message if conversation is empty
         if ($this->isOpen && empty($this->messages)) {
             $this->messages[] = [
                 'role' => 'assistant',
-                'content' => 'Hello! I am your AI CRM Assistant. I can help you find contacts, summarize your pipeline, check for stalled or overdue deals, and more. What would you like to know?',
+                'content' => 'Hello! I am your CRM ChatBot. I can summarise your pipeline, report on deal status, stalled and overdue follow-ups, TSV / timesheet value, and active or inactive contacts. What would you like to know?',
                 'suggestions' => [
-                    'Show pipeline summary',
-                    'Any overdue follow-ups?',
-                    'List stalled deals',
+                    'Show me the deals',
+                    'Show deal status',
+                    'Show top deals by revenue',
+                    'Any stalled deals?',
+                    'What is the TSV value?',
+                    'Show me the timesheet details',
+                    'Active contacts',
+                    'Inactive contacts',
+                    'Show reports',
+                    'Need help',
                 ],
             ];
         }
@@ -45,11 +51,11 @@ class AssistantPanel extends Component
     public function sendMessage(): void
     {
         $question = trim($this->input);
+
         if ($question === '') {
             return;
         }
 
-        // Add user message
         $this->messages[] = [
             'role' => 'user',
             'content' => $question,
@@ -59,22 +65,16 @@ class AssistantPanel extends Component
         $this->isLoading = true;
 
         try {
-            $assistant = app(AiCrmAssistant::class);
-            $result = $assistant->ask($question, auth()->user());
+            $result = app(CrmChatBot::class)->ask($question, auth()->user());
 
             $this->messages[] = [
                 'role' => 'assistant',
-                'content' => $result['answer'] ?? 'I could not find an answer or retrieve data for your request.',
-                'suggestions' => $result['suggestions'] ?? [],
-            ];
-        } catch (AuthorizationException $e) {
-            $this->messages[] = [
-                'role' => 'assistant',
-                'content' => 'Access Denied: You do not have permission to execute this AI action.',
-                'suggestions' => [],
+                'content' => $result->answer ?? 'I could not find an answer for your request.',
+                'suggestions' => $result->suggestions,
+                'dealsUrl' => $result->dealsUrl,
             ];
         } catch (ValidationException $e) {
-            $errors = implode(', ', array_flat($e->errors()));
+            $errors = implode(', ', Arr::flatten($e->errors()));
             $this->messages[] = [
                 'role' => 'assistant',
                 'content' => 'Validation Error: '.$errors,
@@ -104,9 +104,6 @@ class AssistantPanel extends Component
         $this->toggle();
     }
 
-    /**
-     * Render the component view.
-     */
     public function render()
     {
         return view('livewire.ai.assistant-panel');

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
@@ -16,7 +18,7 @@ class Company extends Model
         'phone',
     ];
 
-    public function contacts()
+    public function contacts(): BelongsToMany
     {
         return $this->belongsToMany(
             Contact::class,
@@ -24,7 +26,7 @@ class Company extends Model
         );
     }
 
-    public function deals()
+    public function deals(): BelongsToMany
     {
         return $this->belongsToMany(
             Deal::class,
@@ -32,7 +34,7 @@ class Company extends Model
         )->withPivot('is_primary');
     }
 
-    public function emailLogs()
+    public function emailLogs(): HasMany
     {
         return $this->hasMany(
             DealEmailLog::class

@@ -115,7 +115,7 @@ new class extends Component {
             ->get()
             ->map(
                 fn($r) => [
-                    'stage' => $r->stage->value,
+                    'stage' => $r->stage,
                     'count' => (int) $r->count,
                     'total' => (float) ($r->total_value ?? 0),
                 ],
@@ -260,7 +260,7 @@ new class extends Component {
                 'owner' => $deal->user?->name ?? '—',
                 'company' => $deal->companies->first()?->name ?? '—',
                 'contact' => $deal->contacts->first()?->name ?? '—',
-                'stage' => ucwords($deal->stage->value ?? 'unknown'),
+                'stage' => ucwords(is_object($deal->stage) ? $deal->stage->value : $deal->stage ?? 'unknown'),
                 'amount' => (float) ($deal->amount ?? 0),
                 'margin' => $deal->margin_agreed !== null ? (float) $deal->margin_agreed : null,
                 'created_date' => $deal->created_at?->format('Y-m-d') ?? '—',
@@ -280,7 +280,7 @@ new class extends Component {
             ->limit(20)
             ->get()
             ->map(function ($deal) {
-                $deal->history_type = $deal->stage === DealStage::PAID ? 'paid' : 'completed';
+                $deal->history_type = (is_object($deal->stage) ? $deal->stage->value : $deal->stage) === 'paid' ? 'paid' : 'completed';
                 return $deal;
             });
     }
@@ -646,7 +646,7 @@ new class extends Component {
                                 <td class="px-5 py-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 capitalize">
-                                        {{ $deal->stage->value }}
+                                        {{ is_object($deal->stage) ? $deal->stage->value : $deal->stage }}
                                     </span>
                                 </td>
                                 <td

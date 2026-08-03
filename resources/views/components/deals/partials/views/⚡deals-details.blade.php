@@ -47,15 +47,11 @@ new class extends Component
         {{-- Deal Owner --}}
         <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">Deal Owner</label>
-            @php
-                $users = \App\Models\User::all();
-                $dealOwnerOptions = $users->map(fn ($user) => ['id' => $user->id, 'name' => $user->name]);
-            @endphp
             <select wire:model="user_id"
                 class="block w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
                 <option value="" disabled>Select owner…</option>
-                @foreach ($dealOwnerOptions as $option)
-                    <option value="{{ $option['id'] }}" @selected($option['id'] == $user_id)>{{ $option['name'] }}</option>
+                @foreach ($owners as $owner)
+                    <option value="{{ $owner->id }}" @selected($owner->id == $user_id)>{{ $owner->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -90,7 +86,7 @@ new class extends Component
             @if ($showConsultantDropdown)
                 <div class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
                     @foreach ($consultantSuggestions as $suggestion)
-                        <div wire:click="selectConsultant('{{ addslashes($suggestion) }}')"
+                        <div wire:click="selectConsultant({{ Js::from($suggestion) }})"
                             class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer">
                             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                 <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3" />

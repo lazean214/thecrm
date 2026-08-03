@@ -106,9 +106,6 @@ class AiDealService
 
             case 'compliant':
                 $actions[] = 'Confirm all compliance documentation is complete and prepare the deal for the payment stage.';
-                if (! $deal->mda_setup) {
-                    $actions[] = 'Set up the MDA arrangement for this deal to proceed with payment.';
-                }
                 break;
 
             case 'ready for payment':

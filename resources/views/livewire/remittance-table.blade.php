@@ -288,7 +288,7 @@
                             <div class="relative flex-1">
                                 <input type="text"
                                     :value="query.length > 0 ? query :
-                                        '{{ addslashes($this->getContactName($row['contact_id'])) }}'"
+                                        {{ Js::from($this->getContactName($row['contact_id'])) }}"
                                     @input="query = $event.target.value; highlighted = -1; open = true; positionDropdown($event)"
                                     @focus="open = true; positionDropdown($event)" @keydown="handleKeydown($event)"
                                     placeholder="Type to search contacts..."

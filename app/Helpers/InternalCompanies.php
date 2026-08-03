@@ -2,47 +2,49 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Str;
+use App\Models\InternalCompany;
+use Illuminate\Support\Collection;
 
 class InternalCompanies
 {
-    /**
-     * @return array<int, array{id: int, name: string, slug: string}>
-     */
+    private static function allFromDb(): Collection
+    {
+        return InternalCompany::orderBy('name')->get();
+    }
+
     public static function all(): array
     {
-        $companies = config('internal_companies.companies', []);
-        $result = [];
-
-        foreach ($companies as $index => $name) {
-            if (empty(trim($name))) {
-                continue;
-            }
-
-            $result[] = [
-                'id' => $index + 1,
-                'name' => trim($name),
-                'slug' => Str::slug($name),
-            ];
-        }
-
-        return $result;
+        return self::allFromDb()->map(fn ($c) => [
+            'id' => $c->id,
+            'name' => $c->name,
+            'slug' => $c->slug,
+        ])->values()->toArray();
     }
 
     public static function get(int $id): ?array
     {
-        $all = static::all();
+        $company = InternalCompany::find($id);
 
-        return $all[$id - 1] ?? null;
+        if (! $company) {
+            return null;
+        }
+
+        return ['id' => $company->id, 'name' => $company->name, 'slug' => $company->slug];
     }
 
     public static function getBySlug(string $slug): ?array
     {
-        return collect(static::all())->firstWhere('slug', $slug);
+        $company = InternalCompany::where('slug', $slug)->first();
+
+        if (! $company) {
+            return null;
+        }
+
+        return ['id' => $company->id, 'name' => $company->name, 'slug' => $company->slug];
     }
 
     public static function names(): array
     {
-        return collect(static::all())->pluck('name')->toArray();
+        return self::allFromDb()->pluck('name')->toArray();
     }
 }

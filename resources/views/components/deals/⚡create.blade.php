@@ -24,18 +24,13 @@ new class extends Component
     public $consultant_name;
     public $user_id = null;
 
-    public $companies = [];
-    public $contacts = [];
-
     // Autocomplete state
     public array $consultantSuggestions = [];
     public bool  $showConsultantDropdown = false;
 
     public function mount()
     {
-        $this->user_id   = auth()->id();
-        $this->companies = Company::all()->toArray();
-        $this->contacts  = Contact::all()->toArray();
+        $this->user_id = auth()->id();
     }
 
     public $existingContact = null;
@@ -257,7 +252,7 @@ new class extends Component
                                         @if($showConsultantDropdown)
                                             <div class="deal-autocomplete-dropdown">
                                                 @foreach($consultantSuggestions as $suggestion)
-                                                    <div class="deal-autocomplete-item" wire:click="selectConsultant('{{ addslashes($suggestion) }}')">
+                                                    <div class="deal-autocomplete-item" wire:click="selectConsultant({{ Js::from($suggestion) }})">
                                                         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                                             <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/>
                                                             <path d="M4.5 6.5l1.5 1.5 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -297,7 +292,7 @@ new class extends Component
                                         @if($showConsultantDropdown)
                                             <div class="deal-autocomplete-dropdown">
                                                 @foreach($consultantSuggestions as $suggestion)
-                                                    <div class="deal-autocomplete-item" wire:click="selectConsultant('{{ addslashes($suggestion) }}')">
+                                                    <div class="deal-autocomplete-item" wire:click="selectConsultant({{ Js::from($suggestion) }})">
                                                         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                                             <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/>
                                                             <path d="M4.5 6.5l1.5 1.5 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>

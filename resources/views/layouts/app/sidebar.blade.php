@@ -75,6 +75,10 @@
                         wire:navigate>
                         {{ __('Users') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="home" :href="route('internal-companies')"
+                        :current="request()->routeIs('internal-companies*')" wire:navigate>
+                        {{ __('Internal Companies') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="rectangle-group" :href="route('teams')"
                         :current="request()->routeIs('teams*')" wire:navigate>
                         {{ __('Teams') }}
@@ -107,7 +111,8 @@
                     {{ __('Request My Data') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="cog-6-tooth" :href="route('profile.edit')"
-                    :current="request()->routeIs('profile.edit', 'appearance.edit', 'security.edit', 'notifications.edit', 'data.edit', 'fiscal-year.edit')" wire:navigate>
+                    :current="request()->routeIs('profile.edit', 'appearance.edit', 'security.edit', 'notifications.edit', 'data.edit', 'fiscal-year.edit')"
+                    wire:navigate>
                     {{ __('Settings') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>

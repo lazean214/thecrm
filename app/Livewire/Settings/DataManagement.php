@@ -38,6 +38,7 @@ class DataManagement extends Component
         DB::table('contact_deal')->delete();
         DB::table('company_deal')->delete();
         DB::table('deal_signable_envelopes')->delete();
+        DB::table('signable_envelopes')->delete();
         Deal::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 

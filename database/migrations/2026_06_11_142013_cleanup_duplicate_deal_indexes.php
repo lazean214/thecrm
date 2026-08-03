@@ -8,7 +8,7 @@ return new class extends Migration
     public function up(): void
     {
         // Remove redundant stage index (covered by deals_stage_user_updated_idx)
-        if (Schema::hasIndex('deals', '', 'deals_stage_index')) {
+        if (Schema::hasIndex('deals', 'deals_stage_index')) {
             Schema::table('deals', function ($table) {
                 $table->dropIndex('deals_stage_index');
             });

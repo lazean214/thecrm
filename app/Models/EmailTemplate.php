@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -37,7 +39,7 @@ class EmailTemplate extends Model implements HasMedia
         $this->addMediaCollection('builder_images');
     }
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(
             User::class,
@@ -45,14 +47,14 @@ class EmailTemplate extends Model implements HasMedia
         );
     }
 
-    public function logs()
+    public function logs(): HasMany
     {
         return $this->hasMany(
             DealEmailLog::class
         );
     }
 
-    public function attachments()
+    public function attachments(): HasMany
     {
         return $this->hasMany(
             EmailTemplateAttachment::class

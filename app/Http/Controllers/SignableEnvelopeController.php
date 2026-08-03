@@ -27,8 +27,8 @@ class SignableEnvelopeController extends Controller
                 $envelope->download_url = $request->input('envelope_download');
                 $envelope->completed_at = now();
 
-                // Optional: Fire logic to auto-advance Deal pipeline status
-                $envelope->deal->update(['status' => 'Contract Signed']);
+                // Auto-advance Deal pipeline stage
+                $envelope->deal->update(['stage' => 'doc signed']);
                 break;
 
             case 'cancelled-envelope':

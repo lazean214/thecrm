@@ -278,8 +278,6 @@ class StressTestSeeder extends Seeder
                 'date_sent' => $this->maybe($this->randomDate()),
                 'date_signed' => $this->maybe($this->randomDate()),
                 'who_signed' => $this->maybe($this->randomFirstName().' '.$this->randomLastName()),
-                'mda_setup' => $this->maybe(true, 30),
-                'mda_reference_number' => $this->maybe('MDA-'.rand(1000, 9999)),
                 'date_set_up' => $this->maybe($this->randomDate()),
                 'remittance_received' => $this->maybe(true, 40),
                 'date_logged' => $this->maybe($this->randomDate()),

@@ -68,7 +68,6 @@ new class extends Component {
         'date_signed' => ['label' => 'Date Signed', 'group' => 'Deal'],
         'who_signed' => ['label' => 'Who Signed', 'group' => 'Deal'],
         'right_to_work' => ['label' => 'Right to Work', 'group' => 'Deal'],
-        'mda_reference_number' => ['label' => 'MDA Reference', 'group' => 'Deal'],
         'date_set_up' => ['label' => 'Date Set Up', 'group' => 'Deal'],
         'tax_code' => ['label' => 'Tax Code', 'group' => 'Deal'],
         'created_at' => ['label' => 'Created', 'group' => 'Deal'],
@@ -179,6 +178,11 @@ new class extends Component {
         } else {
             $this->dateFrom = now()->startOfMonth()->toDateString();
             $this->isDefaultDateRange = true;
+        }
+
+        // Deep link from the ChatBot "view deals" link: apply the stage filter
+        if (request()->has('stage')) {
+            $this->filterStage = (string) request()->query('stage');
         }
 
         // Stale-while-revalidate: use cache if fresh, fetch fresh in background
@@ -474,7 +478,7 @@ new class extends Component {
         }
 
         $deal = Deal::findOrFail($dealId);
-        $oldStage = $deal->stage->value;
+        $oldStage = is_object($deal->stage) ? $deal->stage->value : $deal->stage;
 
         // Authorization
         if ($user->isSalesTeam() && (int) $deal->user_id !== $user->id) {
@@ -491,7 +495,7 @@ new class extends Component {
         }
 
         // Save
-        $deal->update(['stage' => DealStage::from($newStage)]);
+        $deal->update(['stage' => $newStage]);
         $deal->logStageChange($oldStage, $newStage, $user->isSalesTeam() ? 'Sales Team action' : 'Compliance Team action');
 
         // Optimistically update kanban state
@@ -749,7 +753,7 @@ new class extends Component {
                 return;
             }
 
-            $deal->update(['stage' => DealStage::from($this->batchStageValue)]);
+            $deal->update(['stage' => $this->batchStageValue]);
         }
 
         $this->invalidateKanbanCache();
@@ -946,7 +950,7 @@ new class extends Component {
     private function buildTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return $this->buildBaseQuery()
-            ->select(['id', 'name', 'amount', 'stage', 'user_id', 'recruitment_agency', 'consultant_name', 'agency_deal_value', 'margin_agreed', 'date_sent', 'date_signed', 'who_signed', 'right_to_work', 'mda_reference_number', 'date_set_up', 'tax_code', 'created_at', 'updated_at'])
+            ->select(['id', 'name', 'amount', 'stage', 'user_id', 'recruitment_agency', 'consultant_name', 'agency_deal_value', 'margin_agreed', 'date_sent', 'date_signed', 'who_signed', 'right_to_work', 'date_set_up', 'tax_code', 'created_at', 'updated_at'])
             ->with(['contacts:id,first_name,last_name', 'companies:id,name,email,phone,domain', 'user:id,name,email']);
     }
 
@@ -1015,7 +1019,7 @@ new class extends Component {
             'id' => $deal->id,
             'name' => $deal->name,
             'amount' => (float) ($deal->amount ?? 0),
-            'stage' => $deal->stage->value,
+            'stage' => is_object($deal->stage) ? $deal->stage->value : $deal->stage,
             'created_at' => $deal->created_at?->toIso8601String(),
             'user' => $deal->relationLoaded('user')
                 ? [
@@ -1065,7 +1069,6 @@ new class extends Component {
             'date_signed' => $deal->date_signed,
             'who_signed' => $deal->who_signed,
             'right_to_work' => $deal->right_to_work,
-            'mda_reference_number' => $deal->mda_reference_number,
             'date_set_up' => $deal->date_set_up,
             'tax_code' => $deal->tax_code,
             'created_at' => $deal->created_at?->toIso8601String(),
@@ -1196,7 +1199,7 @@ new class extends Component {
 
 <div class="space-y-6 w-full mx-auto p-4 sm:p-6 lg:p-8 antialiased text-slate-900 dark:text-slate-100"
     x-data="{
-        view: @entangle('view').defer,
+        view: $wire.entangle('view'),
         showToast: false,
         toastMessage: '',
         toastType: 'success',
@@ -1493,7 +1496,7 @@ new class extends Component {
 
     {{-- Permission Modal --}}
     @if ($showPermissionModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" x-data="{ show: @entangle('showPermissionModal') }">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" x-data="{ show: $wire.entangle('showPermissionModal') }">
             {{-- Backdrop --}}
             <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="closePermissionModal"
                 x-on:click="show = false"></div>

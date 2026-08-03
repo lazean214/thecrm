@@ -68,13 +68,6 @@ class DealFactory extends Factory
                 ->optional()
                 ->name(),
 
-            'mda_setup' => fake()
-                ->boolean(),
-
-            'mda_reference_number' => fake()
-                ->optional()
-                ->bothify('MDA-####'),
-
             'date_set_up' => fake()
                 ->optional()
                 ->date(),

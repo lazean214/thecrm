@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DealEmailLog extends Model
 {
@@ -29,28 +30,28 @@ class DealEmailLog extends Model
         ];
     }
 
-    public function deal()
+    public function deal(): BelongsTo
     {
         return $this->belongsTo(
             Deal::class
         );
     }
 
-    public function contact()
+    public function contact(): BelongsTo
     {
         return $this->belongsTo(
             Contact::class
         );
     }
 
-    public function company()
+    public function company(): BelongsTo
     {
         return $this->belongsTo(
             Company::class
         );
     }
 
-    public function template()
+    public function template(): BelongsTo
     {
         return $this->belongsTo(
             EmailTemplate::class,
@@ -58,7 +59,7 @@ class DealEmailLog extends Model
         );
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(
             User::class

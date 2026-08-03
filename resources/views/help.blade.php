@@ -9,7 +9,7 @@
     $environment->addExtension(new TableExtension());
     $converter = new MarkdownConverter($environment);
 
-    $markdown = file_get_contents(base_path('USER_GUIDE.md'));
+    $markdown = file_get_contents(base_path('docs/User Guide.md'));
     $result = $converter->convert($markdown);
     $content = $result->getContent();
 @endphp

@@ -77,7 +77,7 @@ class GdprExportService
             'id' => $deal->id,
             'name' => $deal->name,
             'amount' => $deal->amount,
-            'stage' => $deal->stage->value,
+            'stage' => (string) $deal->stage,
             'created_at' => $deal->created_at,
             'contacts' => $deal->contacts->map(fn ($c) => $c->only(['id', 'first_name', 'last_name', 'email'])),
             'companies' => $deal->companies->map(fn ($comp) => $comp->only(['id', 'name', 'email'])),

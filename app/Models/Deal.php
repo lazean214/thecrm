@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\DealStage;
+use App\States\Deal\DealState;
 use App\Traits\LogsDealHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,10 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\ModelStates\HasStates;
 
 class Deal extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, LogsDealHistory;
+    use HasFactory, HasStates, InteractsWithMedia, LogsDealHistory;
 
     protected $fillable = [
         'name',
@@ -34,8 +35,6 @@ class Deal extends Model implements HasMedia
         'right_to_work',
         'proof_of_address',
         'photo_id_passport',
-        'mda_setup',
-        'mda_reference_number',
         'date_set_up',
         'remittance_received',
         'date_logged',
@@ -52,9 +51,13 @@ class Deal extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'stage' => DealStage::class,
             'stage_updated_at' => 'datetime',
         ];
+    }
+
+    public function registerStates(): void
+    {
+        DealState::register('stage');
     }
 
     /*

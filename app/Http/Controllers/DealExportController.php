@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exports\DealsExport;
-use Illuminate\Http\Request;
+use App\Http\Requests\DealExportRequest;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DealExportController extends Controller
 {
-    public function export(Request $request)
+    public function export(DealExportRequest $request)
     {
         $filters = $request->only([
             'filterDealName',

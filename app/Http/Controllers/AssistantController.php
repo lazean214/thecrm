@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Services\Ai\AiCrmAssistant;
+use App\Http\Requests\AiAssistantRequest;
+use App\Services\Ai\ChatBot\CrmChatBot;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class AssistantController extends Controller
 {
-    /**
-     * Handle the incoming request.
-     */
-    public function __invoke(Request $request, AiCrmAssistant $assistant): JsonResponse
+    public function __invoke(AiAssistantRequest $request, CrmChatBot $chatBot): JsonResponse
     {
-        $request->validate([
-            'question' => ['required', 'string', 'max:1000'],
+        $reply = $chatBot->ask($request->string('question')->toString(), $request->user());
+
+        return response()->json([
+            'tool' => $reply->intent,
+            'arguments' => $reply->detailRows,
+            'answer' => $reply->answer,
+            'detail' => $reply->detail,
+            'suggestions' => $reply->suggestions,
+            'question' => $reply->question,
+            'questionOptions' => $reply->questionOptions,
+            'dealsUrl' => $reply->dealsUrl,
         ]);
-
-        $result = $assistant->ask($request->string('question')->toString(), $request->user());
-
-        return response()->json($result);
     }
 }

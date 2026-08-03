@@ -62,7 +62,7 @@ new class extends Component
 };
 ?>
 
-<div x-data="{ open: @entangle('open') }" class="p-6">
+<div x-data="{ open: $wire.entangle('open') }" class="p-6">
 
     @if(session()->has('message'))
         <div class="mb-4 rounded-xl bg-green-100 px-4 py-3 text-green-700 dark:bg-green-900/30 dark:text-green-300">

@@ -205,10 +205,6 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap">RTW
                     </th>
                 @endif
-                @if ($hasCol('mda_reference_number'))
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap">MDA
-                        Ref</th>
-                @endif
                 @if ($hasCol('date_set_up'))
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Set
                         Up</th>
@@ -399,12 +395,6 @@
                     @if ($hasCol('right_to_work'))
                         <td class="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
                             {{ $deal['right_to_work'] ?? '—' }}
-                        </td>
-                    @endif
-
-                    @if ($hasCol('mda_reference_number'))
-                        <td class="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                            {{ $deal['mda_reference_number'] ?? '—' }}
                         </td>
                     @endif
 

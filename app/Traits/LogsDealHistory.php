@@ -4,9 +4,11 @@
 
 namespace App\Traits;
 
+use App\Enums\DealStage;
 use App\Models\DealHistory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait LogsDealHistory
 {
@@ -35,7 +37,7 @@ trait LogsDealHistory
             'metadata' => [
                 'name' => $this->name,
                 'amount' => $this->amount,
-                'stage' => $this->stage?->value,
+                'stage' => $this->stage instanceof DealStage ? $this->stage->value : (string) $this->stage,
             ],
         ]);
     }
@@ -208,7 +210,6 @@ trait LogsDealHistory
             'date_sent' => 'Date sent',
             'date_signed' => 'Date signed',
             'who_signed' => 'Who signed',
-            'mda_reference_number' => 'MDA reference number',
             'date_set_up' => 'Date set up',
             'remittance_received' => 'Remittance received',
             'date_logged' => 'Date logged',
@@ -219,7 +220,6 @@ trait LogsDealHistory
             'right_to_work' => 'Right to work',
             'proof_of_address' => 'Proof of address',
             'photo_id_passport' => 'Photo ID/Passport',
-            'mda_setup' => 'MDA setup',
         ];
 
         return $labels[$field] ?? ucwords(str_replace('_', ' ', $field));
@@ -248,7 +248,7 @@ trait LogsDealHistory
     /**
      * Get all history records for this deal.
      */
-    public function histories()
+    public function histories(): HasMany
     {
         return $this->hasMany(DealHistory::class)->latest();
     }

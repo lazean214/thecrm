@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class GdprRetentionService
 {
@@ -30,7 +31,7 @@ class GdprRetentionService
                     ->orWhereNull('last_activity_at');
             })
             ->whereDoesntHave('deals', function ($q) {
-                $q->whereNotIn('stage', ['closed_lost', 'compliant']);
+                $q->whereNotIn('stage', ['lost', 'compliant']);
             })
             ->get();
 
@@ -40,7 +41,7 @@ class GdprRetentionService
                 $contact->update([
                     'first_name' => 'ANON_'.substr(md5($contact->id), 0, 8),
                     'last_name' => 'ANON',
-                    'email' => 'deleted_'.$contact->id.'@gdpr.local',
+                    'email' => 'deleted_'.Str::random(16).'@gdpr.local',
                     'phone' => null,
                     'street_address' => null,
                     'city' => null,

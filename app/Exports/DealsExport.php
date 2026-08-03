@@ -136,8 +136,6 @@ class DealsExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMappin
             'Date Sent',
             'Date Signed',
             'Who Signed',
-            'MDA Setup',
-            'MDA Reference Number',
             'Date Set Up',
             'Remittance Received',
             'Date Logged',
@@ -162,8 +160,8 @@ class DealsExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMappin
     /** @param Deal $deal */
     public function map($deal): array
     {
-        $contact = $deal->primaryContact();
-        $company = $deal->primaryCompany();
+        $contact = $deal->contacts->first(fn ($c) => $c->pivot->is_primary) ?? $deal->contacts->first();
+        $company = $deal->companies->first(fn ($c) => $c->pivot->is_primary) ?? $deal->companies->first();
 
         return [
             $deal->id,
@@ -178,8 +176,6 @@ class DealsExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMappin
             $deal->date_sent ? Carbon::parse($deal->date_sent)->format('d/m/Y') : null,
             $deal->date_signed ? Carbon::parse($deal->date_signed)->format('d/m/Y') : null,
             $deal->who_signed,
-            $deal->mda_setup,
-            $deal->mda_reference_number,
             $deal->date_set_up ? Carbon::parse($deal->date_set_up)->format('d/m/Y') : null,
             $deal->remittance_received ? 'Yes' : 'No',
             $deal->date_logged ? Carbon::parse($deal->date_logged)->format('d/m/Y') : null,

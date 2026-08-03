@@ -22,6 +22,7 @@
         "nwidart/laravel-modules": "*",
         "railsware/mailtrap-php": "*",
         "spatie/laravel-medialibrary": "*",
+        "spatie/laravel-model-states": "^2.14",
         "spatie/laravel-permission": "*"
     },
     "require-dev": {
