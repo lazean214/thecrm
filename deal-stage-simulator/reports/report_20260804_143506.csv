@@ -1,0 +1,11 @@
+account,role,scenario,deal_id,expected,actual,status,error
+sales@thecrm.com,sales,create_deal,610,redirect to /deals/{id},/deals/610,PASS,
+sales@thecrm.com,sales,initial_stage,610,doc sent,doc sent,PASS,
+sales@thecrm.com,sales,move:doc signed,610,doc signed,doc signed,PASS,
+sales@thecrm.com,sales,move:compliant,610,compliant,compliant,PASS,
+sales@thecrm.com,sales,blocked:ready for payment,610,button disabled for sales,enabled=False,PASS,
+sales@thecrm.com,sales,blocked:paid,610,button disabled for sales,enabled=False,PASS,
+compliance@thecrm.com,compliance,can_view,610,deal accessible,doc sent,PASS,
+compliance@thecrm.com,compliance,can_view,610,deal accessible,compliant,PASS,
+compliance@thecrm.com,compliance,compliance_move:ready for payment,610,ready for payment,exception,FAIL,Deal did not reach stage 'ready for payment' (last: compliant)
+sales@thecrm.com,sales,isolation_view_other,,403 Forbidden,no other-rep deal found,FAIL,registry empty for other reps

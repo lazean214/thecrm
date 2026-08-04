@@ -1,0 +1,9 @@
+account,role,scenario,deal_id,expected,actual,status,error
+sales@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+compliance@thecrm.com,compliance,wait_for_deals,,1 deals,0 deals,FAIL,timeout waiting for sales deals
+sales@thecrm.com,sales,isolation_view_other,,403 Forbidden,no other-rep deal found,FAIL,registry empty for other reps

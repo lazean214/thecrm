@@ -1,0 +1,232 @@
+[
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": 612,
+    "expected": "redirect to /deals/{id}",
+    "actual": "/deals/612",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "initial_stage",
+    "deal_id": 612,
+    "expected": "doc sent",
+    "actual": "doc sent",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:doc signed",
+    "deal_id": 612,
+    "expected": "doc signed",
+    "actual": "doc signed",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:compliant",
+    "deal_id": 612,
+    "expected": "compliant",
+    "actual": "compliant",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:ready for payment",
+    "deal_id": 612,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:paid",
+    "deal_id": 612,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales3@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales2@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales4@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": 613,
+    "expected": "redirect to /deals/{id}",
+    "actual": "/deals/613",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "initial_stage",
+    "deal_id": 613,
+    "expected": "doc sent",
+    "actual": "doc sent",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:doc signed",
+    "deal_id": 613,
+    "expected": "doc signed",
+    "actual": "doc signed",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:compliant",
+    "deal_id": 613,
+    "expected": "compliant",
+    "actual": "compliant",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:ready for payment",
+    "deal_id": 613,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:paid",
+    "deal_id": 613,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "compliance@thecrm.com",
+    "role": "compliance",
+    "scenario": "wait_for_deals",
+    "deal_id": null,
+    "expected": "8 deals",
+    "actual": "2 deals",
+    "status": "FAIL",
+    "error": "timeout waiting for sales deals"
+  },
+  {
+    "account": "sales3@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales2@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales4@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "sales3@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": 612,
+    "expected": "403 Forbidden",
+    "actual": "forbidden=True",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales2@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": 612,
+    "expected": "403 Forbidden",
+    "actual": "forbidden=True",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales4@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": 612,
+    "expected": "403 Forbidden",
+    "actual": "forbidden=True",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": null,
+    "expected": "403 Forbidden",
+    "actual": "no other-rep deal found",
+    "status": "FAIL",
+    "error": "registry empty for other reps"
+  }
+]

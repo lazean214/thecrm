@@ -1,0 +1,54 @@
+account,role,scenario,deal_id,expected,actual,status,error
+sales@thecrm.com,sales,create_deal,612,redirect to /deals/{id},/deals/612,PASS,
+sales@thecrm.com,sales,initial_stage,612,doc sent,doc sent,PASS,
+sales@thecrm.com,sales,move:doc signed,612,doc signed,doc signed,PASS,
+sales@thecrm.com,sales,move:compliant,612,compliant,compliant,PASS,
+sales@thecrm.com,sales,blocked:ready for payment,612,button disabled for sales,enabled=False,PASS,
+sales@thecrm.com,sales,blocked:paid,612,button disabled for sales,enabled=False,PASS,
+sales3@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales2@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales4@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales@thecrm.com,sales,create_deal,613,redirect to /deals/{id},/deals/613,PASS,
+sales@thecrm.com,sales,initial_stage,613,doc sent,doc sent,PASS,
+sales@thecrm.com,sales,move:doc signed,613,doc signed,doc signed,PASS,
+sales@thecrm.com,sales,move:compliant,613,compliant,compliant,PASS,
+sales@thecrm.com,sales,blocked:ready for payment,613,button disabled for sales,enabled=False,PASS,
+sales@thecrm.com,sales,blocked:paid,613,button disabled for sales,enabled=False,PASS,
+compliance@thecrm.com,compliance,wait_for_deals,,8 deals,2 deals,FAIL,timeout waiting for sales deals
+sales3@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales2@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales4@thecrm.com,sales,create_deal,,redirect to /deals/{id},exception,FAIL,"Message: 
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]
+	chromedriver!(No symbol) [0x7ff7b75b594d]
+	chromedriver!(No symbol)"
+sales3@thecrm.com,sales,isolation_view_other,612,403 Forbidden,forbidden=True,PASS,
+sales2@thecrm.com,sales,isolation_view_other,612,403 Forbidden,forbidden=True,PASS,
+sales4@thecrm.com,sales,isolation_view_other,612,403 Forbidden,forbidden=True,PASS,
+sales@thecrm.com,sales,isolation_view_other,,403 Forbidden,no other-rep deal found,FAIL,registry empty for other reps

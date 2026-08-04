@@ -1,0 +1,32 @@
+[
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": null,
+    "expected": "redirect to /deals/{id}",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d25+155a5]\n\tchromedriver!GetHandleVerifier [0x7ff7b7a60d80+15600]\n\tchromedriver!(No symbol) [0x7ff7b75b594d]\n\tchromedriver!(No symbol)"
+  },
+  {
+    "account": "compliance@thecrm.com",
+    "role": "compliance",
+    "scenario": "wait_for_deals",
+    "deal_id": null,
+    "expected": "1 deals",
+    "actual": "0 deals",
+    "status": "FAIL",
+    "error": "timeout waiting for sales deals"
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": null,
+    "expected": "403 Forbidden",
+    "actual": "no other-rep deal found",
+    "status": "FAIL",
+    "error": "registry empty for other reps"
+  }
+]

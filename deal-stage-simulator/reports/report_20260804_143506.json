@@ -1,0 +1,102 @@
+[
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "create_deal",
+    "deal_id": 610,
+    "expected": "redirect to /deals/{id}",
+    "actual": "/deals/610",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "initial_stage",
+    "deal_id": 610,
+    "expected": "doc sent",
+    "actual": "doc sent",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:doc signed",
+    "deal_id": 610,
+    "expected": "doc signed",
+    "actual": "doc signed",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "move:compliant",
+    "deal_id": 610,
+    "expected": "compliant",
+    "actual": "compliant",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:ready for payment",
+    "deal_id": 610,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "blocked:paid",
+    "deal_id": 610,
+    "expected": "button disabled for sales",
+    "actual": "enabled=False",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "compliance@thecrm.com",
+    "role": "compliance",
+    "scenario": "can_view",
+    "deal_id": 610,
+    "expected": "deal accessible",
+    "actual": "doc sent",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "compliance@thecrm.com",
+    "role": "compliance",
+    "scenario": "can_view",
+    "deal_id": 610,
+    "expected": "deal accessible",
+    "actual": "compliant",
+    "status": "PASS",
+    "error": ""
+  },
+  {
+    "account": "compliance@thecrm.com",
+    "role": "compliance",
+    "scenario": "compliance_move:ready for payment",
+    "deal_id": 610,
+    "expected": "ready for payment",
+    "actual": "exception",
+    "status": "FAIL",
+    "error": "Deal did not reach stage 'ready for payment' (last: compliant)"
+  },
+  {
+    "account": "sales@thecrm.com",
+    "role": "sales",
+    "scenario": "isolation_view_other",
+    "deal_id": null,
+    "expected": "403 Forbidden",
+    "actual": "no other-rep deal found",
+    "status": "FAIL",
+    "error": "registry empty for other reps"
+  }
+]

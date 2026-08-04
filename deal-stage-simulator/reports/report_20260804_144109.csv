@@ -1,0 +1,12 @@
+account,role,scenario,deal_id,expected,actual,status,error
+sales@thecrm.com,sales,create_deal,611,redirect to /deals/{id},/deals/611,PASS,
+sales@thecrm.com,sales,initial_stage,611,doc sent,doc sent,PASS,
+sales@thecrm.com,sales,move:doc signed,611,doc signed,doc signed,PASS,
+sales@thecrm.com,sales,move:compliant,611,compliant,compliant,PASS,
+sales@thecrm.com,sales,blocked:ready for payment,611,button disabled for sales,enabled=False,PASS,
+sales@thecrm.com,sales,blocked:paid,611,button disabled for sales,enabled=False,PASS,
+compliance@thecrm.com,compliance,can_view,611,deal accessible,doc sent,PASS,
+compliance@thecrm.com,compliance,can_view,611,deal accessible,compliant,PASS,
+compliance@thecrm.com,compliance,compliance_move:ready for payment,611,ready for payment,ready for payment,PASS,
+compliance@thecrm.com,compliance,compliance_move:paid,611,paid,paid,PASS,
+sales@thecrm.com,sales,isolation_view_other,,403 Forbidden,only one sales rep,SKIP,no other rep exists to test isolation
