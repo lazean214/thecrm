@@ -47,6 +47,25 @@ class CrmClient:
             EC.element_to_be_clickable((By.CSS_SELECTOR, css))
         )
 
+    def _click(self, element, css=None):
+        """Click via JS dispatch.
+
+        Livewire's Alpine-managed listeners do not reliably receive Selenium's
+        synthesized native click, so we dispatch a JS click instead (verified to
+        trigger wire:actions). Retries on stale nodes from Livewire re-renders.
+        """
+        deadline = time.time() + self.timeout
+        while True:
+            try:
+                self.driver.execute_script("arguments[0].click();", element)
+                return
+            except StaleElementReferenceException:
+                if css is None:
+                    raise
+                if time.time() > deadline:
+                    raise
+                element = self._clickable(css)
+
     def _fill(self, css, value):
         field = self._clickable(css)
         field.clear()
@@ -61,7 +80,7 @@ class CrmClient:
         self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']")))
         self._fill("input[type='email']", email)
         self._fill("input[type='password']", password)
-        self._clickable("button[type='submit']").click()
+        self._click(self._clickable("button[type='submit']"), "button[type='submit']")
 
         # Wait until we leave the login page.
         WebDriverWait(self.driver, self.timeout).until(
@@ -78,7 +97,7 @@ class CrmClient:
         Returns the new deal id once the app redirects to /deals/{id}.
         """
         self.driver.get(config.DEALS_URL)
-        self._clickable("button.deal-trigger-btn").click()
+        self._click(self._clickable("button.deal-trigger-btn"), "button.deal-trigger-btn")
         self._find("#deal-modal")
 
         self._fill("input[wire\\:model='name']", payload["name"])
@@ -125,7 +144,7 @@ class CrmClient:
         except (TimeoutException, NoSuchElementException):
             pass
 
-        self._clickable("button[form='deal-form']").click()
+        self._click(self._clickable("button[form='deal-form']"), "button[form='deal-form']")
 
         # Component redirects to /deals/{id} after saving.
         WebDriverWait(self.driver, self.timeout).until(
@@ -214,11 +233,13 @@ class CrmClient:
             raise PermissionError(f"Stage button '{stage}' is disabled for this account")
 
         deadline = time.time() + self.timeout
-        while time.time() < deadline:
+        while True:
             try:
                 self.driver.execute_script("arguments[0].click();", btn)
                 break
             except StaleElementReferenceException:
+                if time.time() > deadline:
+                    raise
                 btn = self._stage_button(stage)
         self._settle()
 
