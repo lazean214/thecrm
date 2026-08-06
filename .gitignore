@@ -102,3 +102,6 @@ scratch_test.php
 /docs/
 testing
 testing-journal
+
+backup-to-local.ps1
+git-backup-guide.md
