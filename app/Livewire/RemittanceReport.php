@@ -11,6 +11,7 @@ use App\Models\Contact;
 use App\Models\Remittance;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -60,6 +61,12 @@ class RemittanceReport extends Component
     public float $totalHours = 0;
 
     public int $totalCompanies = 0;
+
+    public int $activeWorkersCount = 0;
+
+    public int $inactiveWorkersCount = 0;
+
+    public int $totalWorkersCount = 0;
 
     public array $billerByOwner = [];
 
@@ -277,32 +284,63 @@ class RemittanceReport extends Component
         $this->breakdowns = $breakdowns;
 
         // ── Calculate Stats ──────────────────────────────────
+        $this->calculateActiveStats($records);
+        $this->calculateBillerByOwner($records);
+        $this->calculateWorkersByCompany($records);
+
+        $this->loaded = true;
+    }
+
+    /**
+     * Distinct billers (contacts) and workers (contact-company placements)
+     * that are active within the filtered period versus the fiscal year.
+     *
+     * @param  Collection<int, Remittance>  $records
+     */
+    private function calculateActiveStats(Collection $records): void
+    {
         $fy = $this->getCurrentFiscalYear();
         $this->fiscalYearLabel = $fy['label'];
 
-        $fyStartStr = $fy['start']->format('Y-m-d');
-        $fyEndStr = $fy['end']->format('Y-m-d');
+        $fyQuery = Remittance::whereNotNull('contact_id')
+            ->where('we_date', '>=', $fy['start']->format('Y-m-d'))
+            ->where('we_date', '<=', $fy['end']->format('Y-m-d'));
 
-        // All distinct billers across the entire fiscal year (ignoring filters)
-        $fyBillers = Remittance::whereNotNull('contact_id')
-            ->where('we_date', '>=', $fyStartStr)
-            ->where('we_date', '<=', $fyEndStr)
-            ->pluck('contact_id')
-            ->unique()
-            ->filter();
-
-        // Distinct billers in the current filtered result set
-        $filteredBillers = $records->pluck('contact_id')->unique()->filter();
+        // Billers — distinct contacts
+        $fyBillers = $fyQuery->pluck('contact_id')->unique()->filter();
+        $activeBillers = $records->pluck('contact_id')->unique()->filter();
 
         $this->totalBillersCount = $fyBillers->count();
-        $this->activeBillersCount = $filteredBillers->count();
-        $this->inactiveBillersCount = $fyBillers->diff($filteredBillers)->count();
+        $this->activeBillersCount = $activeBillers->count();
+        $this->inactiveBillersCount = $fyBillers->diff($activeBillers)->count();
+
+        // Workers — distinct contact + company placements
+        $fyWorkerKeys = $fyQuery->get(['contact_id', 'company_id'])
+            ->filter(fn (Remittance $r) => $r->contact_id && $r->company_id)
+            ->map(fn (Remittance $r) => $r->contact_id.'|'.$r->company_id)
+            ->unique();
+
+        $activeWorkerKeys = $records
+            ->filter(fn (Remittance $r) => $r->contact_id && $r->company_id)
+            ->map(fn (Remittance $r) => $r->contact_id.'|'.$r->company_id)
+            ->unique();
+
+        $this->totalWorkersCount = $fyWorkerKeys->count();
+        $this->activeWorkersCount = $activeWorkerKeys->count();
+        $this->inactiveWorkersCount = $fyWorkerKeys->diff($activeWorkerKeys)->count();
 
         $this->totalRemittanceValue = (float) $records->sum('amount');
         $this->totalHours = (float) $records->sum('hours');
         $this->totalCompanies = $records->pluck('company_id')->unique()->filter()->count();
+    }
 
-        // ── Biller by Owner ──────────────────────────────────
+    /**
+     * Group records by deal owner, counting distinct active billers.
+     *
+     * @param  Collection<int, Remittance>  $records
+     */
+    private function calculateBillerByOwner(Collection $records): void
+    {
         $this->billerByOwner = $records->groupBy('deal_owner')
             ->map(function ($group) {
                 $first = $group->first();
@@ -318,8 +356,15 @@ class RemittanceReport extends Component
             ->sortByDesc('active_billers')
             ->values()
             ->toArray();
+    }
 
-        // ── Workers by Company ────────────────────────────────
+    /**
+     * Group records by company, counting distinct workers per agency.
+     *
+     * @param  Collection<int, Remittance>  $records
+     */
+    private function calculateWorkersByCompany(Collection $records): void
+    {
         $this->workersByCompany = $records->groupBy('company_id')
             ->map(function ($group) {
                 $first = $group->first();
@@ -335,8 +380,6 @@ class RemittanceReport extends Component
             ->sortByDesc('worker_count')
             ->values()
             ->toArray();
-
-        $this->loaded = true;
     }
 
     private function getCurrentFiscalYear(): array
@@ -376,6 +419,9 @@ class RemittanceReport extends Component
         $this->activeBillersCount = 0;
         $this->inactiveBillersCount = 0;
         $this->totalBillersCount = 0;
+        $this->activeWorkersCount = 0;
+        $this->inactiveWorkersCount = 0;
+        $this->totalWorkersCount = 0;
         $this->totalRemittanceValue = 0;
         $this->totalHours = 0;
         $this->totalCompanies = 0;

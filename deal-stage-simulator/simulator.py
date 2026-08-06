@@ -11,6 +11,12 @@ It also verifies the permission model:
   * a sales rep cannot reach ready-for-payment / paid (buttons locked)
   * a sales rep cannot open another rep's deal (403)
   * compliance can view + advance every rep's deals
+
+Known app limitation (Livewire 4.3.1): the create-deal modal loses its form
+data when multiple browsers submit concurrently - overlapping
+`wire:model.live` requests send stale snapshots, so `save()` receives empty
+fields and fails validation. Deal creation is therefore serialized through a
+shared lock; stage moves and permission checks still run fully concurrently.
 """
 
 import random
@@ -188,7 +194,7 @@ class PayloadFactory:
 # Workers
 # ---------------------------------------------------------------------------
 
-def sales_worker(account, deals_per_rep, registry, recorder, gate, headless, interval, other_reps_exist):
+def sales_worker(account, deals_per_rep, registry, recorder, gate, headless, interval, other_reps_exist, create_lock):
     """One sales rep: create deals, drive them, verify permissions."""
     email = account["email"]
     client = None
@@ -203,10 +209,17 @@ def sales_worker(account, deals_per_rep, registry, recorder, gate, headless, int
         for i in range(deals_per_rep):
             payload = factory.next(email)
 
-            # 1. Create deal
+            # 1. Create deal.
+            #
+            # Creation is serialized with a shared lock: the app's create modal
+            # (Livewire 4.3.1) loses form data when several browsers submit
+            # concurrently (overlapping wire:model.live requests send stale
+            # snapshots, so save() receives empty fields and fails validation).
+            # Stage moves and permission checks run fully concurrently.
             deal_id = None
             try:
-                deal_id = client.create_deal(payload)
+                with create_lock:
+                    deal_id = client.create_deal(payload)
                 recorder.record(email, "sales", "create_deal", deal_id, "redirect to /deals/{id}", f"/deals/{deal_id}", "PASS")
             except Exception as e:
                 recorder.record(email, "sales", "create_deal", deal_id, "redirect to /deals/{id}", "exception", "FAIL", _err(e))
@@ -361,13 +374,14 @@ def run_simulation(sales_accounts, compliance_account, deals_per_rep, headless=F
     gate = Gate(len(workers))
     expected_total = len(sales_accounts) * deals_per_rep
     other_reps_exist = len(sales_accounts) > 1
+    create_lock = threading.Lock()
 
     threads = []
     for role, account in workers:
         if role == "sales":
             t = threading.Thread(
                 target=sales_worker,
-                args=(account, deals_per_rep, registry, recorder, gate, headless, interval, other_reps_exist),
+                args=(account, deals_per_rep, registry, recorder, gate, headless, interval, other_reps_exist, create_lock),
                 name=f"sales:{account['email']}",
             )
         else:

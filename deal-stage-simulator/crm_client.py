@@ -52,19 +52,30 @@ class CrmClient:
 
         Livewire's Alpine-managed listeners do not reliably receive Selenium's
         synthesized native click, so we dispatch a JS click instead (verified to
-        trigger wire:actions). Retries on stale nodes from Livewire re-renders.
+        trigger wire:actions). Livewire may replace the node with a morph
+        mid-click; a click on a detached node is silently lost, so we verify the
+        node is still connected afterwards and retry with a fresh one. A click
+        that navigates (form POST / Livewire redirect) detaches the node too,
+        but that means the click was delivered - we detect it via URL change or
+        a page load in progress.
         """
         deadline = time.time() + self.timeout
         while True:
+            before = self.driver.current_url
             try:
                 self.driver.execute_script("arguments[0].click();", element)
-                return
+                if self.driver.execute_script("return arguments[0].isConnected", element):
+                    return
+                time.sleep(0.25)
             except StaleElementReferenceException:
-                if css is None:
-                    raise
-                if time.time() > deadline:
-                    raise
-                element = self._clickable(css)
+                time.sleep(0.25)
+            if self.driver.current_url != before:
+                return
+            if self.driver.execute_script("return document.readyState") == "loading":
+                return
+            if css is None or time.time() > deadline:
+                raise TimeoutError(f"Click could not be delivered to {css or 'element'}")
+            element = self._clickable(css)
 
     def _fill(self, css, value):
         field = self._clickable(css)

@@ -5,9 +5,9 @@ import traceback
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
 import config
@@ -19,29 +19,43 @@ lock = threading.Lock()
 
 
 class StepClient(CrmClient):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.tag = "?"
+
     def _clickable(self, css, timeout=None):
         t0 = time.time()
         try:
             r = super()._clickable(css, timeout)
-            print(f"[{self.tag}] clickable {css!r} ok in {time.time()-t0:.1f}s", flush=True)
+            self.p(f"clickable {css} ok {time.time()-t0:.1f}s")
             return r
         except Exception as e:
-            print(f"[{self.tag}] clickable {css!r} TIMEOUT after {time.time()-t0:.1f}s: {e}", flush=True)
+            self.p(f"clickable {css} TIMEOUT {time.time()-t0:.1f}s: {e}")
             raise
 
     def _find(self, css, timeout=None):
         t0 = time.time()
         try:
             r = super()._find(css, timeout)
-            print(f"[{self.tag}] find {css!r} ok in {time.time()-t0:.1f}s", flush=True)
+            self.p(f"find {css} ok {time.time()-t0:.1f}s")
             return r
         except Exception as e:
-            print(f"[{self.tag}] find {css!r} TIMEOUT after {time.time()-t0:.1f}s: {e}", flush=True)
+            self.p(f"find {css} TIMEOUT {time.time()-t0:.1f}s")
             raise
 
     def _fill(self, css, value):
-        print(f"[{self.tag}] fill {css!r} = {value}", flush=True)
-        return super()._fill(css, value)
+        t0 = time.time()
+        try:
+            r = super()._fill(css, value)
+            self.p(f"fill {css} ok {time.time()-t0:.1f}s")
+            return r
+        except Exception as e:
+            self.p(f"fill {css} FAIL {time.time()-t0:.1f}s")
+            raise
+
+    def p(self, m):
+        with lock:
+            print(f"[{self.tag}] {m}", flush=True)
 
 
 def run(account, idx):
@@ -57,7 +71,7 @@ def run(account, idx):
     client.tag = account["email"]
     try:
         client.login(account["email"], config.ACCOUNT_PASSWORD)
-        print(f"[{client.tag}] logged in", flush=True)
+        client.p("logged in")
         payload = {
             "name": f"Dbg {account['email']}-{idx}",
             "amount": 10000,
@@ -70,11 +84,10 @@ def run(account, idx):
             "margin_agreed": 10,
         }
         deal_id = client.create_deal(payload)
-        print(f"[{client.tag}] created deal {deal_id}", flush=True)
+        client.p(f"created deal {deal_id}")
         results[account["email"]] = f"OK {deal_id}"
     except Exception as e:
-        print(f"[{client.tag}] FAIL {type(e).__name__}: {e}", flush=True)
-        traceback.print_exc()
+        client.p(f"FAIL {type(e).__name__}")
         results[account["email"]] = f"FAIL {type(e).__name__}"
     finally:
         driver.quit()

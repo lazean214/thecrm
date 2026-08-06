@@ -74,6 +74,9 @@ crm-automation/failed_deals_*.csv
 crm-automation/*.xlsx
 crm-automation/*.json
 
+# Deal Stage Simulator
+deal-stage-simulator/
+
 # Browser simulation screenshots
 tests/BrowserSimulation/screenshots/*.png
 

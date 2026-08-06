@@ -92,3 +92,21 @@ written to `reports/report_<timestamp>.json` and `.csv`.
 - Every deal created is unique per run (`sim.<run-token>.<rep>.<n>@example.test`),
   so repeated runs never collide.
 - `crm-automation/` (the bulk CSV importer) is intentionally left untouched.
+
+### Known app limitation: concurrent deal creation
+
+The app runs **Livewire 4.3.1**, whose client runtime can lose form data when
+several browsers submit the create-deal modal at the same time. Overlapping
+`wire:model.live` requests send **stale snapshots** (a known Livewire 4.x bug
+class, see livewire/livewire#10061), so `save()` receives empty fields and
+fails validation with "field is required" errors. It is fully reproducible:
+with 4 browsers creating simultaneously, exactly the slowest/last browser to
+submit succeeds. Upstream fix is merged but not yet in a tagged 4.3.x release.
+
+Consequence for this tool: **deal creation is serialized** through a shared
+lock (one browser creates at a time), while stage moves and permission checks
+still run fully concurrently. This keeps the simulation green against the
+app's real behaviour; if the app is upgraded to a fixed Livewire release, the
+`with create_lock:` block in `simulator.py::sales_worker` can be removed to
+restore fully-parallel creation.
+

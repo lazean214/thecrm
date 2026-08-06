@@ -23,6 +23,10 @@ new class extends Component {
     public string $filterDateTo = '';
     public string $reportView = 'master';
     public int $perPage = 15;
+    public array $chartStage = [];
+    public array $chartWeekly = [];
+    public array $chartOwner = [];
+    public array $chartCompany = [];
 
     public function mount(): void
     {
@@ -31,31 +35,39 @@ new class extends Component {
         if ($user && $user->isSalesTeam() && !$user->isAdmin()) {
             $this->filterUserId = $user->id;
         }
+
+        $this->syncChartData();
     }
 
     public function updatedFilterUserId(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedFilterCompanyId(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedFilterContactId(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedFilterStage(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedFilterDateFrom(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedFilterDateTo(): void
     {
         $this->resetPage();
+        $this->syncChartData();
     }
     public function updatedPerPage(): void
     {
@@ -328,6 +340,62 @@ new class extends Component {
             ->when($this->filterDateTo !== '', fn($q) => $q->whereDate('created_at', '<=', $this->filterDateTo));
     }
 
+    public function syncChartData(): void
+    {
+        $base = fn() => $this->getBaseQuery();
+
+        // Stage distribution chart
+        $stages = $base()
+            ->selectRaw('stage, count(*) as count, sum(amount) as total_value')
+            ->groupBy('stage')
+            ->orderByDesc('count')
+            ->get();
+
+        $this->chartStage = [
+            'labels' => $stages->map(fn($r) => ucwords(str_replace('_', ' ', $r->stage)))->values()->all(),
+            'counts' => $stages->map(fn($r) => (int) $r->count)->values()->all(),
+            'values' => $stages->map(fn($r) => (float) ($r->total_value ?? 0))->values()->all(),
+        ];
+
+        // Pipeline value by owner chart
+        $owners = $base()
+            ->selectRaw('user_id, sum(amount) as total_value')
+            ->groupBy('user_id')
+            ->orderByDesc('total_value')
+            ->get();
+
+        $ownerNames = User::whereIn('id', $owners->pluck('user_id')->filter())
+            ->pluck('name', 'id');
+
+        $this->chartOwner = [
+            'labels' => $owners->map(fn($r) => $ownerNames->get($r->user_id) ?? 'Unassigned')->values()->all(),
+            'values' => $owners->map(fn($r) => (float) ($r->total_value ?? 0))->values()->all(),
+        ];
+
+        // Pipeline value by company chart
+        $companies = $base()
+            ->join('company_deal', 'deals.id', '=', 'company_deal.deal_id')
+            ->join('companies', 'companies.id', '=', 'company_deal.company_id')
+            ->selectRaw('companies.name as company_name, sum(deals.amount) as total_value')
+            ->groupBy('companies.name')
+            ->orderByDesc('total_value')
+            ->get();
+
+        $this->chartCompany = [
+            'labels' => $companies->pluck('company_name')->values()->all(),
+            'values' => $companies->map(fn($r) => (float) ($r->total_value ?? 0))->values()->all(),
+        ];
+
+        // Weekly trend chart (oldest first for a natural x-axis)
+        $weeks = collect($this->weeklySummary)->reverse()->values();
+
+        $this->chartWeekly = [
+            'labels' => $weeks->map(fn($week) => $week->week_range)->all(),
+            'deals' => $weeks->map(fn($week) => (int) $week->total_deals)->all(),
+            'paid' => $weeks->map(fn($week) => (float) $week->paid_amount)->all(),
+        ];
+    }
+
     public function resetFilters(): void
     {
         $this->filterUserId = null;
@@ -338,6 +406,7 @@ new class extends Component {
         $this->filterDateTo = '';
         $this->reportView = 'master';
         $this->resetPage();
+        $this->syncChartData();
 
         $user = Auth::user();
         if ($user && $user->isSalesTeam() && !$user->isAdmin()) {
@@ -564,33 +633,58 @@ new class extends Component {
         </div>
     </div>
 
-    {{-- Stage Distribution --}}
-    @if (count($this->stageDistribution) > 0)
-        @php $maxStageCount = max(array_column($this->stageDistribution, 'count')); @endphp
+    {{-- Charts --}}
+    <div class="grid gap-4 md:grid-cols-2"
+        x-data="pipelineCharts($wire.entangle('chartStage'), $wire.entangle('chartWeekly'), $wire.entangle('chartOwner'), $wire.entangle('chartCompany'))">
+
+        {{-- Stage Distribution --}}
         <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-4">Stage
-                Distribution</h3>
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach ($this->stageDistribution as $item)
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="w-28 text-xs font-medium text-slate-700 dark:text-slate-300 truncate text-right">{{ ucwords($item['stage']) }}</span>
-                        <div class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-6 overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-500 flex items-center justify-end px-2"
-                                style="width: {{ max(1, ($item['count'] / $maxStageCount) * 100) }}%; background-color: {{ ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed'][$loop->index % 6] }};">
-                                <span
-                                    class="text-xs font-semibold text-white {{ $item['count'] / $maxStageCount < 0.15 ? 'sr-only' : '' }}">
-                                    {{ $item['count'] }}
-                                </span>
-                            </div>
-                        </div>
-                        <span
-                            class="w-16 text-xs text-slate-500 dark:text-slate-400">£{{ number_format($item['total']) }}</span>
-                    </div>
-                @endforeach
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Stage
+                    Distribution</h3>
+                <span class="text-xs text-slate-400 dark:text-slate-500">Deals by stage</span>
+            </div>
+            <div class="relative h-64">
+                <canvas id="pipelineStageChart" wire:ignore></canvas>
             </div>
         </div>
-    @endif
+
+        {{-- Weekly Trend --}}
+        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Weekly
+                    Trend</h3>
+                <span class="text-xs text-slate-400 dark:text-slate-500">Deals created & paid value</span>
+            </div>
+            <div class="relative h-64">
+                <canvas id="pipelineWeeklyChart" wire:ignore></canvas>
+            </div>
+        </div>
+
+        {{-- Pipeline Value by Owner --}}
+        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Value by
+                    Owner</h3>
+                <span class="text-xs text-slate-400 dark:text-slate-500">Pipeline value (£)</span>
+            </div>
+            <div class="relative h-64">
+                <canvas id="pipelineOwnerChart" wire:ignore></canvas>
+            </div>
+        </div>
+
+        {{-- Pipeline Value by Company --}}
+        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Value by
+                    Company</h3>
+                <span class="text-xs text-slate-400 dark:text-slate-500">Pipeline value (£)</span>
+            </div>
+            <div class="relative h-64">
+                <canvas id="pipelineCompanyChart" wire:ignore></canvas>
+            </div>
+        </div>
+    </div>
 
     {{-- Master Report View --}}
     @if ($reportView === 'master')
@@ -1059,3 +1153,271 @@ new class extends Component {
         </div>
     @endif
 </div>
+
+{{-- ── Chart.js + Pipeline Charts Alpine Component ───────── --}}
+@assets
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4" defer></script>
+@endassets
+
+@script
+<script>
+window.pipelineCharts = function (initialStage, initialWeekly, initialOwner, initialCompany) {
+    const charts = {};
+    const PALETTE = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#84cc16', '#06b6d4', '#f97316'];
+    const money = (v) => '£' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+    return {
+        stage: initialStage,
+        weekly: initialWeekly,
+        owner: initialOwner,
+        company: initialCompany,
+
+        init() {
+            this.$watch('stage', () => this.$nextTick(() => this.renderAll()));
+            this.$watch('weekly', () => this.$nextTick(() => this.renderAll()));
+            this.$watch('owner', () => this.$nextTick(() => this.renderAll()));
+            this.$watch('company', () => this.$nextTick(() => this.renderAll()));
+            this.$nextTick(() => this.renderAll());
+        },
+
+        renderAll() {
+            this.renderStage();
+            this.renderWeekly();
+            this.renderOwner();
+            this.renderCompany();
+        },
+
+        destroy(name) {
+            if (charts[name]) {
+                charts[name].destroy();
+                charts[name] = null;
+            }
+        },
+
+        theme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                grid: isDark ? '#334155' : '#e2e8f0',
+                text: isDark ? '#94a3b8' : '#64748b',
+                tooltipBg: isDark ? '#1e293b' : '#ffffff',
+                tooltipTitle: isDark ? '#f1f5f9' : '#0f172a',
+                tooltipBody: isDark ? '#cbd5e1' : '#334155',
+                tooltipBorder: isDark ? '#475569' : '#e2e8f0',
+            };
+        },
+
+        tooltipStyles(theme) {
+            return {
+                backgroundColor: theme.tooltipBg,
+                titleColor: theme.tooltipTitle,
+                bodyColor: theme.tooltipBody,
+                borderColor: theme.tooltipBorder,
+                borderWidth: 1,
+                cornerRadius: 8,
+                padding: 12,
+            };
+        },
+
+        renderStage() {
+            const ctx = document.getElementById('pipelineStageChart');
+            if (!ctx) return;
+            this.destroy('stage');
+            const data = this.stage || { labels: [], counts: [], values: [] };
+            if (!data.labels || !data.labels.length) return;
+            const t = this.theme();
+            const stageColors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed'];
+            charts.stage = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Deals',
+                        data: data.counts,
+                        backgroundColor: stageColors.slice(0, data.labels.length),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            ...this.tooltipStyles(t),
+                            callbacks: {
+                                afterLabel: (item) => {
+                                    const value = data.values[item.dataIndex];
+                                    return value !== undefined ? 'Value: ' + money(value) : '';
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: t.text, stepSize: 1, font: { size: 11 } },
+                            grid: { color: t.grid, drawBorder: false },
+                            border: { display: false },
+                        },
+                        x: {
+                            ticks: { color: t.text, font: { size: 11 } },
+                            grid: { display: false },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        },
+
+        renderWeekly() {
+            const ctx = document.getElementById('pipelineWeeklyChart');
+            if (!ctx) return;
+            this.destroy('weekly');
+            const data = this.weekly || { labels: [], deals: [], paid: [] };
+            if (!data.labels || !data.labels.length) return;
+            const t = this.theme();
+            charts.weekly = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Deals Created',
+                            data: data.deals,
+                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                            borderColor: '#6366f1',
+                            pointBackgroundColor: '#6366f1',
+                            pointRadius: 3,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Paid Value (£)',
+                            data: data.paid,
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            borderColor: '#10b981',
+                            pointBackgroundColor: '#10b981',
+                            pointRadius: 3,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y1',
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: t.text, font: { size: 11 }, boxWidth: 12 } },
+                        tooltip: this.tooltipStyles(t),
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            ticks: { color: t.text, stepSize: 1, font: { size: 11 } },
+                            grid: { color: t.grid, drawBorder: false },
+                            border: { display: false },
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            ticks: { color: t.text, font: { size: 11 }, callback: (v) => '£' + Number(v).toLocaleString() },
+                            grid: { display: false },
+                            border: { display: false },
+                        },
+                        x: {
+                            ticks: { color: t.text, font: { size: 10 }, maxRotation: 45 },
+                            grid: { display: false },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        },
+
+        renderOwner() {
+            const ctx = document.getElementById('pipelineOwnerChart');
+            if (!ctx) return;
+            this.destroy('owner');
+            const data = this.owner || { labels: [], values: [] };
+            if (!data.labels || !data.labels.length) return;
+            const t = this.theme();
+            charts.owner = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Value',
+                        data: data.values,
+                        backgroundColor: PALETTE.slice(0, data.labels.length),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            ...this.tooltipStyles(t),
+                            callbacks: { label: (item) => ' ' + money(item.parsed.y) },
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: t.text, font: { size: 11 }, callback: (v) => '£' + Number(v).toLocaleString() },
+                            grid: { color: t.grid, drawBorder: false },
+                            border: { display: false },
+                        },
+                        x: {
+                            ticks: { color: t.text, font: { size: 11 } },
+                            grid: { display: false },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        },
+
+        renderCompany() {
+            const ctx = document.getElementById('pipelineCompanyChart');
+            if (!ctx) return;
+            this.destroy('company');
+            const data = this.company || { labels: [], values: [] };
+            if (!data.labels || !data.labels.length) return;
+            const t = this.theme();
+            charts.company = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: PALETTE.slice(0, data.labels.length),
+                        borderWidth: 0,
+                        hoverOffset: 6,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: t.text, font: { size: 11 }, boxWidth: 12 } },
+                        tooltip: {
+                            ...this.tooltipStyles(t),
+                            callbacks: { label: (item) => ' ' + money(item.parsed) },
+                        },
+                    },
+                },
+            });
+        },
+    };
+}
+</script>
+@endscript
