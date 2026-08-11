@@ -10,6 +10,7 @@ use App\Helpers\InternalCompanies;
 use Livewire\WithFileUploads;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 new class extends Component {
     use WithFileUploads;
@@ -242,7 +243,14 @@ new class extends Component {
         $this->stage = $stage;
         $this->deals->stage = $stage;
 
+        $this->markDealsCacheDirty();
+
         $this->dispatch('notify', type: 'success', message: 'Deal stage updated.');
+    }
+
+    private function markDealsCacheDirty(): void
+    {
+        Cache::forever('deals_data_dirty_' . auth()->id(), true);
     }
 
     public function updatedConsultantName(): void
@@ -435,6 +443,8 @@ new class extends Component {
         $this->uploadDocuments('compliance_documents');
         $this->uploadDocuments('contract_documents');
         $this->reset(['compliance_documents', 'contract_documents']);
+
+        $this->markDealsCacheDirty();
 
         session()->flash('success', 'Deal saved successfully.');
     }

@@ -11,8 +11,8 @@
         <!-- Left Panel - Branding -->
         <div
             class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-e dark:border-neutral-800">
-            <div class="absolute inset-0 bg-neutral-900 text-white opacity-75"
-                style="background-image: url('https://img.magnific.com/free-vector/gradient-metaverse-illustration_23-2149265633.jpg'); background-size: cover; background-position: center;">
+            <div class="absolute inset-0 bg-white text-white opacity-75"
+                style="background-image: url('dashboard-cover.png'); background-size: contain; background-position: center center; no-repeat;">
             </div>
             <a href="{{ route('home') }}" class="relative z-20 flex items-center text-lg font-medium" wire:navigate>
                 <span class="flex  w-24 items-center justify-center rounded-md">

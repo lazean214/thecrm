@@ -116,7 +116,7 @@ new class extends Component {
 
         // Use paginate for total count
         $query = $this->buildTableQuery();
-        $paginated = $query->latest('updated_at')->paginate($this->perPage);
+        $paginated = $query->latest('updated_at')->paginate($this->perPage, ['*'], 'page', $this->currentPage);
 
         $this->totalDeals = $paginated->total();
         $this->totalPages = max(1, (int) ceil($this->totalDeals / $this->perPage));
@@ -191,6 +191,12 @@ new class extends Component {
 
     public function loadWithStaleCache(): void
     {
+        if ($this->consumeCacheInvalidationMarker()) {
+            $this->refreshKanbanData();
+
+            return;
+        }
+
         $cacheKey = $this->kanbanCacheKey();
         $cached = Cache::get($cacheKey);
 
@@ -246,6 +252,12 @@ new class extends Component {
     #[On('loadKanban')]
     public function loadKanbanData(): void
     {
+        if ($this->consumeCacheInvalidationMarker()) {
+            $this->refreshKanbanData();
+
+            return;
+        }
+
         // Try cache first
         $cacheKey = $this->kanbanCacheKey();
         $cached = Cache::get($cacheKey);
@@ -276,6 +288,14 @@ new class extends Component {
         $data = $this->fetchKanbanData();
         $this->kanbanData = $data['stages'] ?? [];
         Cache::put($this->kanbanCacheKey(), $data, now()->addMinutes(2));
+    }
+
+    #[On('dealCreated')]
+    public function handleDealCreated(): void
+    {
+        if ($this->view === 'kanban') {
+            $this->refreshKanbanData();
+        }
     }
 
     public function refreshKanbanData(): void
@@ -1116,6 +1136,11 @@ new class extends Component {
         $parts = [auth()->id(), $this->filterDealName, $this->filterOwner, $this->filterContact, $this->filterCompanyName, $this->filterStage, $this->minAmount, $this->maxAmount, $this->dateFrom, $this->dateTo];
 
         return 'kanban_' . md5(serialize($parts));
+    }
+
+    private function consumeCacheInvalidationMarker(): bool
+    {
+        return Cache::pull('deals_data_dirty_' . auth()->id()) === true;
     }
 
     private function fetchKanbanData(): array

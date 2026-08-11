@@ -454,7 +454,7 @@
     @endif
 </div>
 
-{{-- Pagination (cursor-based) --}}
+{{-- Pagination --}}
 <div class="flex items-center justify-between mt-4 px-1">
     <div class="text-sm text-slate-500 dark:text-slate-400">
         @if ($totalDeals > 0)
@@ -465,7 +465,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-        <button wire:click="previousPage()" @disabled(!$previousCursor)
+        <button wire:click="previousPage()" @disabled($currentPage <= 1)
             class="px-3 py-1.5 rounded-md text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
             ‹ Previous
         </button>

@@ -4,6 +4,7 @@ use App\Enums\DealStage;
 use App\Models\Deal;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -48,6 +49,57 @@ test('deals can be filtered by name', function () {
         ->set('filterDealName', 'Alpha')
         ->assertSee('Alpha Deal')
         ->assertDontSee('Beta Deal');
+});
+
+test('table pagination moves between pages', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    foreach (range(1, 30) as $i) {
+        Deal::create([
+            'user_id' => $user->id,
+            'name' => "Deal $i",
+            'amount' => 1000,
+            'stage' => DealStage::DOC_SENT->value,
+        ]);
+    }
+
+    Livewire::test('deals.table')
+        ->set('perPage', 10)
+        ->set('view', 'table')
+        ->assertSet('currentPage', 1)
+        ->assertSet('paginationFrom', 1)
+        ->call('nextPage')
+        ->assertSet('currentPage', 2)
+        ->assertSet('paginationFrom', 11)
+        ->call('previousPage')
+        ->assertSet('currentPage', 1)
+        ->assertSet('paginationFrom', 1);
+});
+
+test('stage change in deal view invalidates kanban cache', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create([
+        'user_id' => $user->id,
+        'name' => 'Alpha Deal',
+        'amount' => 1000,
+        'stage' => DealStage::DOC_SENT->value,
+    ]);
+
+    Livewire::test('deals.table')
+        ->assertSet('kanbanData.doc sent.count', 1)
+        ->assertSet('kanbanData.doc signed.count', 0);
+
+    Livewire::test('deals.view', ['dealId' => $deal->id])
+        ->call('setStage', DealStage::DOC_SIGNED->value);
+
+    expect(Cache::has('deals_data_dirty_'.$user->id))->toBeTrue();
+
+    Livewire::test('deals.table')
+        ->assertSet('kanbanData.doc sent.count', 0)
+        ->assertSet('kanbanData.doc signed.count', 1);
 });
 
 test('view mode can be toggled', function () {
